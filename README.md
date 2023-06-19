@@ -1,39 +1,59 @@
-# tee_tee_os_kernel
+# tee_tee_os_kernel 仓介绍 #
 
-#### 介绍
-{**以下是 Gitee 平台说明，您可以替换此简介**
-Gitee 是 OSCHINA 推出的基于 Git 的代码托管平台（同时支持 SVN）。专为开发者提供稳定、高效、安全的云端软件开发协作平台
-无论是个人、团队、或是企业，都能够用 Gitee 实现代码托管、项目管理、协作开发。企业项目请看 [https://gitee.com/enterprises](https://gitee.com/enterprises)}
+tee_tee_os_kernel 部件主要包含 TEE 的内核部分，采用微内核架构设计。
 
-#### 软件架构
-软件架构说明
+### 一、tee_tee_os_kernel 部件模块划分 ###
+<table>
+<th>子模块名称</th>
+<th>模块简介</th>
+<tr>
+<td> kernel/ipc </td><td> 进程间通信模块 </td>
+</tr><tr>
+<td> kernel/irq </td><td> 中断处理模块 </td>
+</tr><tr>
+<td> kernel/mm </td><td> 内存管理模块 </td>
+</tr><tr>
+<td> kernel/object </td><td> 内核对象管理 </td>
+</tr><tr>
+<td> kernel/sched </td><td> 线程调度模块 </td>
+</tr><tr>
+<td> user/chcore-libs/sys-libs/libohtee </td><td> 框架所依赖的库函数 </td>
+</tr><tr>
+<td> user/system-services/system-servers/procmgr </td><td> 负责进程管理，拥有所有进程的信息 </td>
+</tr><tr>
+<td> user/system-services/system-servers/fs_base </td><td> 虚拟文件系统模块 </td>
+</tr><tr>
+<td> user/system-services/system-servers/fsm </td><td> 文件系统管理模块 </td>
+</tr><tr>
+<td> user/system-services/system-servers/tmpfs </td><td> 内存文件系统模块 </td>
+</tr><tr>
+<td> user/system-services/system-servers/chanmgr </td><td> 管理 channel 的命名、索引及分发 </td>
+</tr>
 
 
-#### 安装教程
+</table>
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### 使用说明
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### 参与贡献
-
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
-
-
-#### 特技
-
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  Gitee 官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是 Gitee 最有价值开源项目，是综合评定出的优秀开源项目
-5.  Gitee 官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  Gitee 封面人物是一档用来展示 Gitee 会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+### 二、tee_tee_os_kernel 部件代码目录结构 ###
+```
+base/tee/tee_tee_os_kernel
+├── kernel
+│   ├── arch
+│   ├── ipc
+│   ├── irq
+│   ├── lib
+│   ├── mm
+│   ├── object
+│   ├── sched
+│   └── syscall
+├── tool
+│   └── read_procmgr_elf_tool
+├── user/chcore-libs
+│   ├── sys-interfaces/chcore-internal
+│   └── sys-libs/libohtee
+└── user/system-services/system-servers
+    ├── chanmgr
+    ├── fs_base
+    ├── fsm
+    ├── procmgr
+    └── tmpfs
+```
