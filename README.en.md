@@ -57,3 +57,23 @@ base/tee/tee_tee_os_kernel
     ├── procmgr
     └── tmpfs
 ```
+
+### 3. tee_tee_os_kernel building guide ###
+
+1. TEEOS kernel code location: `base/tee/tee_tee_os_kernel`
+ 
+2. TEEOS framework code location: `base/tee/tee_tee_os_framework`
+
+3. Change the directory to the root directory of the OpenHarmony source code, and enter the following command to enter the Docker building environment:
+
+```Bash
+docker run -it --rm -v $(pwd):$(pwd) -w $(pwd) swr.cn-south-1.myhuaweicloud.com/openharmony-docker/docker_oh_full:3.2 bash
+```
+
+4. Enter the following command to build TEEOS for the Yangfan board:
+
+```Bash
+./build.sh --product-name yangfan --build-target tee --ccache
+```
+
+5. The product is the TEEOS image: `base/tee/tee_tee_os_kernel/kernel/bl32.bin`
