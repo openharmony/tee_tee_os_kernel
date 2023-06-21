@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -35,11 +35,11 @@ struct nameidata {
                                           symlinks */
 };
 
-int path_parentat(struct nameidata *nd, const char *path, unsigned flags,
+int path_parentat(struct nameidata *nd, const char *name, unsigned flags,
                   struct dentry **parent);
-int path_lookupat(struct nameidata *nd, const char *path, unsigned flags,
+int path_lookupat(struct nameidata *nd, const char *name, unsigned flags,
                   struct dentry **dentry);
-int path_openat(struct nameidata *nd, const char *path, unsigned open_flags,
+int path_openat(struct nameidata *nd, const char *name, unsigned open_flags,
                 unsigned flags, struct dentry **dentry);
 
 #endif /* TMPFS_NAMEI_H */

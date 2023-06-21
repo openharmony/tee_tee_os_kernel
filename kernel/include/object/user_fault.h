@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -9,10 +9,10 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
+#ifdef CHCORE_ENABLE_FMAP
+
 #ifndef OBJECT_USER_FAULT_H
 #define OBJECT_USER_FAULT_H
-
-#ifdef CHCORE_ENABLE_FMAP
 
 #include <ipc/notification.h>
 #include <common/lock.h>
@@ -29,7 +29,7 @@ struct user_fault_msg {
 struct fault_pending_thread {
     /* Use (fault_badge, fault_va) as key to find the pending thread */
     badge_t fault_badge;
-    addr_t fault_va;
+    vaddr_t fault_va;
 
     struct thread *thread;
 
@@ -64,6 +64,6 @@ int sys_user_fault_register(cap_t notific_cap, vaddr_t msg_buffer);
 int sys_user_fault_map(badge_t client_badge, vaddr_t fault_va, vaddr_t remap_va,
                        bool copy, unsigned long perm);
 
-#endif /* CHCORE_ENABLE_FMAP */
-
 #endif /* OBJECT_USER_FAULT_H */
+
+#endif

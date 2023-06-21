@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -10,9 +10,9 @@
  * See the Mulan PSL v2 for more details.
  */
 
-#ifndef PLAT_RK3399_IRQ_NUM_H
-#define PLAT_RK3399_IRQ_NUM_H
+#ifndef ARCH_AARCH64_PLAT_RK3399_IRQ_NUM_H
+#define ARCH_AARCH64_PLAT_RK3399_IRQ_NUM_H
 
 #define MAX_IRQ_NUM 128
 
-#endif /* PLAT_RK3399_IRQ_NUM_H */
+#endif /* ARCH_AARCH64_PLAT_RK3399_IRQ_NUM_H */

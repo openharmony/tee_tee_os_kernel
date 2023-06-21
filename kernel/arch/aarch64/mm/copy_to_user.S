@@ -1,3 +1,15 @@
+/*
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU), Shanghai Jiao Tong University (SJTU)
+ * Licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 /* Copyright (c) 2012, Linaro Limited
    All rights reserved.
 
@@ -51,6 +63,7 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include <common/asm.h>
 
 /* Assumptions:
@@ -248,10 +261,6 @@ L(copy_long):
 	mov x0, #0
 	ret
 
-	/* Exception fixup
-	 * try harder before being absolutey sure no more bytes could be copied
-	 * return value (x0) shoule be the number of bytes not copied
-	 */
 97: 
 	mov x0, #-1
 	ret

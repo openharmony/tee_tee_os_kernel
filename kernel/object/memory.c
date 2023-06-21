@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -238,6 +238,9 @@ int sys_get_phys_addr(vaddr_t va, paddr_t *pa_buf)
     struct vmspace *vmspace;
     paddr_t pa;
     int ret;
+
+    // if ((ret = hook_sys_get_phys_addr(va, pa_buf)) != 0)
+    //         return ret;
 
     if ((check_user_addr_range(va, 0) != 0)
         || (check_user_addr_range((vaddr_t)pa_buf, sizeof(*pa_buf)) != 0))
@@ -636,7 +639,7 @@ void pmo_deinit(void *pmo_ptr)
 unsigned long sys_handle_brk(unsigned long addr, unsigned long heap_start)
 {
     struct vmspace *vmspace;
-    struct pmobject *pmo = NULL;
+    struct pmobject *pmo;
     struct vmregion *heap_vmr;
     size_t len;
     unsigned long retval = 0;
@@ -746,6 +749,7 @@ int sys_handle_mprotect(unsigned long addr, unsigned long length, int prot)
         if (remaining < vmr->size) {
             static int warn = 1;
 
+            
             if (warn == 1) {
                 kwarn("func: %s, ignore a mprotect since no supporting for "
                       "splitting vmr now.\n",

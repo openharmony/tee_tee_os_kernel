@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -20,6 +20,8 @@
 #include <mm/uaccess.h>
 #include <sched/context.h>
 
+
+
 /* Per-core timer states */
 struct time_state {
     /* The tick when the next timer irq will occur */
@@ -27,7 +29,6 @@ struct time_state {
     /*
      * Record all sleepers on each core.
      * Threads in sleep_list are sorted by the time to wakeup.
-     * It is better to use more efficient data structure (tree)
      */
     struct list_head sleep_list;
     /* Protect per core sleep_list */
@@ -144,7 +145,6 @@ void handle_timer_irq(void)
 
 /*
  * clock_gettime:
- * - now we all clock sources are monotime
  * - the return time is caculated from the system boot
  */
 int sys_clock_gettime(clockid_t clock, struct timespec *ts)
@@ -268,8 +268,9 @@ int sys_clock_nanosleep(clockid_t clk, int flags, const struct timespec *req,
     kdebug("sleep clk:%d flag:%x ", clk, flags);
     kdebug("req:%ld.%ld\n", req ? req->tv_sec : 0, req ? req->tv_nsec : 0);
 
+    
     if (rem != NULL) {
-        return -EINVAL;
+        rem = NULL;
     }
 
     ret = copy_from_user(&ts_k, (void *)req, sizeof(ts_k));

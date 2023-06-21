@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -50,6 +50,7 @@
 #define SYS_get_thread_id    84
 #define SYS_terminate_thread 85
 #endif /* CHCORE_OH_TEE */
+#define SYS_kill_group 86
 /* - recycle */
 #define SYS_register_recycle     90
 #define SYS_cap_group_recycle    91

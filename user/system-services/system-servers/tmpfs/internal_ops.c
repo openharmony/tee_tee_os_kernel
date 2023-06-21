@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -144,7 +144,7 @@ void tmpfs_fs_stat(struct statfs *statbuf)
     /* Maximum length of filenames */
     statbuf->f_namelen = MAX_PATH;
     /* Fragment size (since Linux 2.6) */
-    statbuf->f_frsize = FRAGMENT_SIZE;
+    statbuf->f_frsize = 512;
     /* Mount flags of filesystem (since Linux 2.6.36) */
     statbuf->f_flags = 0;
 }

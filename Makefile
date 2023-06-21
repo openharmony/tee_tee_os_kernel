@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+# Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
 # Licensed under the Mulan PSL v2.
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
@@ -9,31 +9,40 @@
 # See the Mulan PSL v2 for more details.
 
 all: user kernel
+include config.mk
 
 Q=@
 
 # libc
-LIBC_DIR := $(realpath user/chcore-libc)
+LIBC_PROJ_DIR := $(realpath user/chcore-libc)
+LIBC_DIR := $(LIBC_PROJ_DIR)/musl-libc
+LIBCHCORE_DIR := $(LIBC_PROJ_DIR)/libchcore
+LIBCHCORE_SCRIPTS_DIR := $(LIBCHCORE_DIR)/cmake
+LIBCHCORE_OVERRIDES_DIR := $(LIBCHCORE_DIR)/porting/overrides
+LIBCHCORE_PATCHES_DIR := $(LIBCHCORE_DIR)/porting/patches
+LIBCHCORE_ARCH_INCLUDES_DIR := $(LIBCHCORE_DIR)/arch/$(CHCORE_ARCH)
+
 libc:
-	$(Q)cd $(LIBC_DIR) \
+	$(Q)bash $(LIBCHCORE_SCRIPTS_DIR)/do_override_dir.sh $(LIBCHCORE_OVERRIDES_DIR) $(LIBC_DIR) \
+	&& bash $(LIBCHCORE_SCRIPTS_DIR)/do_patch_dir.sh $(LIBCHCORE_PATCHES_DIR) $(LIBC_DIR) \
+	&& cd $(LIBC_DIR) \
 	&& ./configure --prefix=$(LIBC_DIR)/install \
 		--syslibdir=$(LIBC_DIR)/lib \
 		--target=$(CHCORE_CROSS_COMPILE) \
+		--with-malloc=oldmalloc \
 		COMPILER=$(CHCORE_COMPILER) \
 		CROSS_COMPILE=llvm- \
-		CFLAGS="$(CONFIG_FLAGS)" \
+		CFLAGS="$(CONFIG_FLAGS) -I$(LIBCHCORE_ARCH_INCLUDES_DIR)" \
 	&& make -j$(shell nproc) > /dev/null \
 	&& make install
 
 # common flags for userspace targets (libs, system servers and apps)
-include config.mk
 override CC := $(LIBC_DIR)/install/bin/musl-clang
 override AR := $(LIBC_DIR)/install/bin/musl-ar
 override OBJCOPY := llvm-objcopy
 override OBJDUMP := llvm-objdump
 override RANLIB := llvm-ranlib
 override DEFAULT_CFLAGS = -Wall -O3 $(CONFIG_FLAGS) \
-	-I$(realpath user/chcore-libs/sys-interfaces) \
 	-I$(realpath user/chcore-libs/sys-libs/libohtee/include)
 
 # flags for libs

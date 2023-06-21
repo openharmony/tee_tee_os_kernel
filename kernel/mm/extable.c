@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -21,6 +21,7 @@ const struct exception_table_entry *search_extable(vaddr_t addr)
            _extable_start,
            _extable_end);
     for (e = _extable_start; e != _extable_end && e->insn != 0; e++) {
+        // kinfo("insn: %lx, fixup: %lx\n", e->insn, e->fixup);
         if (e->insn == addr) {
             return e;
         }

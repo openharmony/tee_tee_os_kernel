@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -9,12 +9,6 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
-// Copyright 2016 The Fuchsia Authors
-// Copyright (c) 2015 Google Inc. All rights reserved
-//
-// Use of this source code is governed by a MIT-style
-// license that can be found in the LICENSE file or at
-// https://opensource.org/licenses/MIT
 #include <object/thread.h>
 #include <sched/context.h>
 #include <sched/sched.h>
@@ -127,6 +121,8 @@ void restore_fpu_state(struct thread *thread)
 #define CPACR_EL1_FPEN      20
 #define CPACR_EL1_FPEN_MASK 0b11
 
+
+
 void disable_fpu_usage(void)
 {
     struct per_cpu_info *info;
@@ -136,7 +132,7 @@ void disable_fpu_usage(void)
 
     if (info->fpu_disable == 0) {
         /* Get current cpacr value */
-        cpacr = info->cpacr;
+        asm volatile("mrs %0, cpacr_el1" : "=r"(cpacr)::"memory");
         /* Disable using FPU */
         cpacr &= ~(CPACR_EL1_FPEN_MASK << CPACR_EL1_FPEN);
         /* Allow EL1 to use */
@@ -160,7 +156,6 @@ void enable_fpu_usage(void)
 
     info = get_per_cpu_info();
     info->fpu_disable = 0;
-    info->cpacr = cpacr;
 }
 
 /* This function is used as the hander for FPU traps */

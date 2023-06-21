@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -62,10 +62,8 @@ static struct page *split_chunk(struct phys_mem_pool *pool, int order,
     chunk->order -= 1;
 
     buddy_chunk = get_buddy_chunk(pool, chunk);
-    if (buddy_chunk == NULL) {
-        BUG("buddy_chunk must exist");
-        return NULL;
-    }
+    /* The buddy_chunk must exist since we are spliting a large chunk. */
+    BUG_ON(buddy_chunk == NULL);
 
     /* Set the metadata of the remaining buddy_chunk. */
     buddy_chunk->order = chunk->order;
@@ -262,11 +260,7 @@ struct page *virt_to_page(void *ptr)
             break;
         }
     }
-
-    if (pool == NULL) {
-        kwarn("invalid poll in %s", __func__);
-        return NULL;
-    }
+    BUG_ON(pool == NULL);
 
     page = pool->page_metadata
            + (((vaddr_t)addr - pool->pool_start_addr) / BUDDY_PAGE_SIZE);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -64,7 +64,7 @@ static u64 get_tlbi_va_arg(vaddr_t addr, u64 asid)
     return arg;
 }
 
-/* Analyze the threshold */
+
 #define TLB_SHOOTDOWN_THRESHOLD 2
 
 static void do_flush_tlb_opt(vaddr_t start_va, u64 page_cnt, u64 asid)

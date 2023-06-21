@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -84,10 +84,6 @@ void notify_user_recycler(badge_t proc_badge, int exitcode)
         struct recycle_msg_node *msg;
 
         msg = kmalloc(sizeof(*msg));
-        if (!msg) {
-            kwarn("No memory when %s", __func__);
-            return;
-        }
         msg->msg.badge = proc_badge;
         msg->msg.exitcode = exitcode;
         list_add(&msg->node, &recycle_msg_head);
@@ -167,6 +163,45 @@ void sys_exit_group(int exitcode)
     eret_to_thread(switch_context());
 }
 
+/*
+ * Only procmgr could call this function. It will use this function
+ * to kill the process with the given cap in procmgr's cap group.
+ *  */
+int sys_kill_group(int proc_cap)
+{
+    struct cap_group *cap_group_to_kill;
+    struct thread *thread;
+
+    cap_group_to_kill = obj_get(current_cap_group, proc_cap, TYPE_CAP_GROUP);
+    if (!cap_group_to_kill) {
+        /* Invalid cap or the object is not a cap group */
+        return -EINVAL;
+    }
+
+    if (atomic_cmpxchg_32((&cap_group_to_kill->notify_recycler), 0, 1) == 0) {
+        /*
+         * Grap the threads_lock and set the threads state.
+         * After that, no new thread will be allocated.
+         * see `create_thread` in thread.c
+         */
+        lock(&cap_group_to_kill->threads_lock);
+        for_each_in_list (
+            thread, struct thread, node, &(cap_group_to_kill->thread_list)) {
+            /* CAS is used in case the state is set to TE_EXITED
+             * concurrently */
+            atomic_cmpxchg_32((int *)(&thread->thread_ctx->thread_exit_state),
+                              TE_RUNNING,
+                              TE_EXITING);
+        }
+        unlock(&cap_group_to_kill->threads_lock);
+
+        notify_user_recycler(cap_group_to_kill->badge, 0);
+    }
+    obj_put(cap_group_to_kill);
+
+    return 0;
+}
+
 static void recycle_server_shadow_thread(struct ipc_connection *conn,
                                          struct thread *server_thread,
                                          bool recycle_client_state)
@@ -194,10 +229,6 @@ static void recycle_server_shadow_thread(struct ipc_connection *conn,
 
         server_thread->thread_ctx->sc =
             kmalloc(sizeof(*server_thread->thread_ctx->sc));
-        if (!server_thread->thread_ctx->sc) {
-            kwarn("No memory when %s", __func__);
-            return;
-        }
         server_thread->thread_ctx->sc->budget = DEFAULT_BUDGET;
         server_thread->thread_ctx->sc->prio = DEFAULT_PRIO;
         arch_set_thread_next_ip(server_thread, config->ipc_exit_routine_entry);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -59,7 +59,15 @@ static inline int ctzl(unsigned long x)
 /* return the first one bit start from the highest bit */
 static inline int bsr(unsigned int x)
 {
+#ifndef CHCORE_ARCH_RISCV64
     return BITS_PER_INT - 1 - __builtin_clz(x);
+#else
+    
+    int i;
+    for (i = BITS_PER_INT - 1; !(x & BIT(i)); i--)
+        ;
+    return i;
+#endif
 }
 
 static inline int find_next_bit_helper(unsigned long *p, unsigned long size,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -14,6 +14,8 @@
 #include <object/irq.h>
 #include <common/errno.h>
 #include <sched/context.h>
+
+
 
 struct irq_notification *irq_notifcs[MAX_IRQ_NUM];
 int user_handle_irq(int irq)
@@ -44,7 +46,7 @@ int user_handle_irq(int irq)
     /* Never returns. */
 
     BUG_ON(1);
-    __builtin_unreachable();
+    return 0;
 }
 
 void irq_deinit(void *irq_ptr)

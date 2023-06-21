@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -35,6 +35,9 @@
 #ifdef CHCORE_OH_TEE
 #include <ipc/channel.h>
 #endif /* CHCORE_OH_TEE */
+#ifdef CHCORE_ARCH_X86_64
+#include <arch/pci.h>
+#endif /* CHCORE_ARCH_X86_64 */
 
 #include "syscall_num.h"
 
@@ -55,7 +58,8 @@ int sys_null_placeholder(void)
 }
 
 #if ENABLE_PRINT_LOCK == ON
-DEFINE_SPINLOCK(global_print_lock);
+
+struct lock global_print_lock = {0};
 #endif
 
 void sys_putstr(char *str, size_t len)
@@ -113,6 +117,7 @@ unsigned long sys_get_current_tick(void)
     return plat_get_current_tick();
 }
 
+/* DELETE */
 /* Syscalls for perfromance benchmark */
 /* A debugging function which can be used for adding trace points in apps */
 void sys_debug_log(long arg)
@@ -135,10 +140,15 @@ void sys_perf_end(void)
 void sys_perf_null(void)
 {
 }
+/* DELETE */
 
 void sys_get_pci_device(int class, u64 pci_dev_uaddr)
 {
+#if defined(CHCORE_ARCH_X86_64)
+    arch_get_pci_device(class, pci_dev_uaddr);
+#else
     kwarn("PCI is not supported on current architecture.\n");
+#endif
 }
 
 void sys_poweroff(void)
@@ -180,6 +190,7 @@ const void *syscall_table[NR_SYSCALL] = {
     [SYS_exit_group] = sys_exit_group,
     [SYS_create_thread] = sys_create_thread,
     [SYS_thread_exit] = sys_thread_exit,
+    [SYS_kill_group] = sys_kill_group,
 #ifdef CHCORE_OH_TEE
     [SYS_get_thread_id] = sys_get_thread_id,
     [SYS_terminate_thread] = sys_terminate_thread,

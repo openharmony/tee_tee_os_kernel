@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -44,7 +44,13 @@ static struct htable pid2proc;
 
 /* Max number of pcid on x86_64 is different from that (ASID) on aarch64. */
 static struct id_manager pcid_mgr;
-#if defined(CHCORE_ARCH_AARCH64)
+#if defined(CHCORE_ARCH_X86_64)
+static const int PCID_MAX = 1 << 12;
+#elif defined(CHCORE_ARCH_AARCH64)
+static const int PCID_MAX = 1 << 16;
+#elif defined(CHCORE_ARCH_RISCV64)
+static const int PCID_MAX = 1 << 16;
+#elif defined(CHCORE_ARCH_SPARC)
 static const int PCID_MAX = 1 << 16;
 #else
 #error "Unsupported architecture"

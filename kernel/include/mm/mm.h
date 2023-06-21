@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -33,5 +33,9 @@ void set_page_table(paddr_t pgtbl);
 void flush_tlb_by_range(struct vmspace *, vaddr_t start_va, size_t size);
 void flush_tlb_by_vmspace(struct vmspace *);
 void flush_idcache(void);
+
+/* Only needed on SPARC */
+void sys_cache_config(unsigned option);
+void plat_cache_config(unsigned option);
 
 #endif /* MM_MM_H */
