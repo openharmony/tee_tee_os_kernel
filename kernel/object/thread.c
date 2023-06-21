@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -501,11 +501,13 @@ int sys_set_priority(cap_t thread_cap, unsigned int prio)
         goto out;
     }
 
-    if (thread_cap == 0)
-        /* 0 represents current thread */
+    /* XXX: currently, we use -1 to represent the current thread */
+    if (thread_cap == -1) {
         thread = current_thread;
-    else
+        BUG_ON(!thread);
+    } else {
         thread = obj_get(current_cap_group, thread_cap, TYPE_THREAD);
+    }
 
     if (!thread) {
         ret = -ECAPBILITY;
@@ -514,8 +516,9 @@ int sys_set_priority(cap_t thread_cap, unsigned int prio)
 
     thread->thread_ctx->sc->prio = prio;
 
-    if (thread_cap != -1)
+    if (thread_cap != -1) {
         obj_put(thread);
+    }
 out:
     return ret;
 }

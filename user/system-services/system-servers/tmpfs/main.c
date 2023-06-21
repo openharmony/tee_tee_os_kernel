@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -49,7 +49,7 @@ int tmpfs_load_image(const char *start)
     cpio_init_g_files();
     cpio_extract(start, "/");
 
-    char tmp[MAX_PATH];
+    char *tmp = malloc(MAX_PATH);
 
     for (f = g_files.head.next; f; f = f->next) {
         if (!(f->header.c_filesize))
@@ -102,10 +102,12 @@ int tmpfs_load_image(const char *start)
         }
     }
 
+    
     err = tmpfs_mkdir("/tafs", 0);
     BUG_ON(err);
 
 error:
+    free(tmp);
     return err;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -89,7 +89,7 @@ extern void push_fs_vnode(struct fs_vnode *n);
 extern void pop_free_fs_vnode(struct fs_vnode *n);
 extern struct fs_vnode *get_fs_vnode_by_id(ino_t vnode_id);
 
-int inc_ref_fs_vnode(void *n);
-int dec_ref_fs_vnode(void *node);
+int inc_ref_fs_vnode(void *);
+int dec_ref_fs_vnode(void *);
 
 #endif /* FS_VNODE_H */

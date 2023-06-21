@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -24,6 +24,7 @@ void arch_interrupt_init_per_cpu(void); /* in arch/xxx/irq/irq_entry.c */
 void arch_enable_irqno(int irqno);
 void arch_disable_irqno(int irqno);
 
+/* XXX: only needed in ARM and SPARC */
 void plat_handle_irq(void); /* in arch/xxx/plat/xxx/irq/irq.c */
 void plat_handle_irqno(int irq); /* in arch/xxx/plat/xxx/irq/irq.c */
 void plat_interrupt_init(void); /* in arch/xxx/plat/xxx/irq/irq.c */

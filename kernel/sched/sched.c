@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -178,10 +178,8 @@ vaddr_t switch_context(void)
     struct thread *prev_thread;
 
     target_thread = current_thread;
-    if (!target_thread || !target_thread->thread_ctx) {
-        kwarn("%s no thread_ctx", __func__);
-        return 0;
-    }
+    BUG_ON(!target_thread);
+    BUG_ON(!target_thread->thread_ctx);
 
     target_ctx = target_thread->thread_ctx;
 

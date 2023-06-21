@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -44,6 +44,7 @@ static int slot_table_init(struct slot_table *slot_table, unsigned int size,
 
     size = DIV_ROUND_UP(size, BASE_OBJECT_NUM) * BASE_OBJECT_NUM;
     slot_table->slots_size = size;
+    /* XXX: vmalloc is better? */
     slot_table->slots = kzalloc(size * sizeof(*slot_table->slots));
     if (!slot_table->slots) {
         r = -ENOMEM;
@@ -374,10 +375,7 @@ struct cap_group *create_root_cap_group(char *name, size_t name_len)
     cap_t slot_id;
 
     cap_group = obj_alloc(TYPE_CAP_GROUP, sizeof(*cap_group));
-    if (!cap_group) {
-        kwarn("failed alloc cap_group in %s\n", __func__);
-        return NULL;
-    }
+    BUG_ON(!cap_group);
     cap_group_init(cap_group,
                    BASE_OBJECT_NUM,
                    /* Fixed badge */ ROOT_CAP_GROUP_BADGE);
@@ -386,10 +384,7 @@ struct cap_group *create_root_cap_group(char *name, size_t name_len)
     BUG_ON(slot_id != CAP_GROUP_OBJ_ID);
 
     vmspace = obj_alloc(TYPE_VMSPACE, sizeof(*vmspace));
-    if (!vmspace) {
-        kwarn("failed alloc vmspace in %s\n", __func__);
-        return NULL;
-    }
+    BUG_ON(!vmspace);
 
     /* fixed PCID 1 for root process, PCID 0 is not used. */
     vmspace_init(vmspace, ROOT_PROCESS_PCID);

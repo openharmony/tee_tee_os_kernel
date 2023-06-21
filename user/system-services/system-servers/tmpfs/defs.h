@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -63,8 +63,6 @@
 
 #define MAX_PATH    (4096)
 #define MAX_SYM_LEN MAX_PATH
-
-#define FRAGMENT_SIZE (512)
 
 #define MAX_NR_FID_RECORDS   (1024)
 #define MAX_DIR_HASH_BUCKETS (1024)
@@ -199,6 +197,9 @@ void tmpfs_fs_stat(struct statfs *statbuf);
 
 /* main.c */
 void init_root(void);
+
+/* tmpfs.c */
+int tmpfs_mkdir(const char *path, mode_t mode);
 
 /* tmpfs.c */
 int tmpfs_mkdir(const char *path, mode_t mode);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -56,16 +56,13 @@ static void free_cow_private_page(struct cow_private_page *record)
     kfree(record);
 }
 
-int vmregion_record_cow_private_page(struct vmregion *vmr, void *private_page)
+void vmregion_record_cow_private_page(struct vmregion *vmr, void *private_page)
 {
     struct cow_private_page *record;
 
     record = kmalloc(sizeof(*record));
-    if (!record)
-        return -ENOMEM;
     record->page = private_page;
     list_add(&record->node, &vmr->cow_private_pages);
-    return 0;
 }
 
 static void free_vmregion(struct vmregion *vmr)
@@ -365,6 +362,7 @@ int vmspace_unmap_range(struct vmspace *vmspace, vaddr_t va, size_t len)
     if (!vmr)
         goto out_unlock;
 
+    
     start = vmr->start;
     size = vmr->size;
     if ((va != start) || (len != size)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -21,6 +21,7 @@
 #include <sys/mman.h>
 #include <sched.h>
 #include <errno.h>
+#include <chcore/pthread.h>
 
 #include "proc_node.h"
 #include "procmgr_dbg.h"
@@ -141,6 +142,37 @@ static void handle_newproc(ipc_msg_t *ipc_msg, badge_t client_badge,
     } else {
         ipc_return(ipc_msg, proc_node->pid);
     }
+}
+
+static void handle_kill(ipc_msg_t *ipc_msg, struct proc_request *pr)
+{
+    pid_t pid = pr->kill.pid;
+    struct proc_node *proc_to_kill;
+    int proc_cap, ret;
+
+    debug("Kill process with pid: %d\n", pid);
+
+    /* We only support to kill a process with the specified pid. */
+    if (pid <= 0) {
+        error("kill: We only support positive pid. pid: %d\n", pid);
+        ipc_return(ipc_msg, -EINVAL);
+    }
+
+    proc_to_kill = get_proc_node_by_pid(pid);
+    if (!proc_to_kill) {
+        error("kill: No process with pid: %d\n", pid);
+        ipc_return(ipc_msg, -ESRCH);
+    }
+
+    proc_cap = proc_to_kill->proc_cap;
+    ret = usys_kill_group(proc_cap);
+    debug("[procmgr] usys_kill_group return value: %d\n", ret);
+    if (ret) {
+        error("kill: usys_kill_group returns an error value: %d\n", ret);
+        ipc_return(ipc_msg, -EINVAL);
+    }
+
+    ipc_return(ipc_msg, 0);
 }
 
 static void handle_wait(ipc_msg_t *ipc_msg, badge_t client_badge,
@@ -318,6 +350,9 @@ void procmgr_dispatch(ipc_msg_t *ipc_msg, badge_t client_badge)
      */
     case PROC_REQ_GET_SERVER_CAP:
         handle_get_server_cap(ipc_msg, pr);
+        break;
+    case PROC_REQ_KILL:
+        handle_kill(ipc_msg, pr);
         break;
 #ifdef CHCORE_OH_TEE
     case PROC_REQ_SPAWN:

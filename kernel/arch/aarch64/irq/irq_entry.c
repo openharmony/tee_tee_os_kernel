@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -146,13 +146,14 @@ u64 handle_entry_c(int type, u64 esr, u64 address)
         break;
     }
 
-    BUG("Exception type: %d, ESR: 0x%lx, Fault address: 0x%lx, "
-        "EC 0b%b\n",
-        type,
-        esr,
-        address,
-        esr_ec);
-    __builtin_unreachable();
+    kinfo("Exception type: %d, ESR: 0x%lx, Fault address: 0x%lx, "
+          "EC 0b%b\n",
+          type,
+          esr,
+          address,
+          esr_ec);
+
+    BUG_ON(1);
 }
 
 /* Interrupt handler for interrupts happening when in EL0. */
@@ -172,8 +173,8 @@ void handle_irq_el1(u64 elr_el1)
 
 void unexpected_handler(void)
 {
-    BUG("[fatal error] %s is invoked\n", __func__);
-    __builtin_unreachable();
+    kinfo("[fatal error] %s is invoked\n", __func__);
+    BUG_ON(1);
 }
 
 void handle_fiq(void)

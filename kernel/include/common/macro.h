@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -43,10 +43,7 @@
 #define MAX(x, y) ((x) < (y) ? (y) : (x))
 #define MIN(x, y) ((x) < (y) ? (x) : (y))
 
-#if NDEBUG
-#define BUG_ON(expr)  ((void)(expr))
-#define BUG(str, ...) ((void)(str))
-#else
+
 #define BUG_ON(expr)                                                        \
     do {                                                                    \
         if ((expr)) {                                                       \
@@ -64,7 +61,6 @@
         for (;;) {                                                         \
         }                                                                  \
     } while (0)
-#endif
 
 #define WARN(msg) printk("WARN: %s:%d %s\n", __func__, __LINE__, msg)
 

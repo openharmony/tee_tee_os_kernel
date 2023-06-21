@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+# Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
 # Licensed under the Mulan PSL v2.
 # You can use this software according to the terms and conditions of the Mulan PSL v2.
 # You may obtain a copy of Mulan PSL v2 at:
@@ -31,7 +31,7 @@ SRCS += $(INCBINS_SRC)
 OBJS := $(SRCS:%=%.o)
 DEPS := $(OBJS:.o=.d)
 
-TOOL_DIR = $(ROOT_DIR)/tools/read_procmgr_elf_tool
+TOOL_DIR = $(ROOT_DIR)/scripts/read_procmgr_elf_tool
 read_procmgr_elf_tool: $(TOOL_DIR)/elf.c $(TOOL_DIR)/main.c
 	clang $^ -o $@
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -54,10 +54,6 @@ void _free_pages(void *addr, bool is_revoke_record)
     struct page *page;
 
     page = virt_to_page(addr);
-    if (!page) {
-        kwarn("invalid page in %s", __func__);
-        return;
-    }
     buddy_free_pages(page->pool, page);
 }
 
@@ -128,8 +124,6 @@ void *kzalloc(size_t size)
     void *addr;
 
     addr = kmalloc(size);
-    if (!addr)
-        return NULL;
     memset(addr, 0, size);
     return addr;
 }

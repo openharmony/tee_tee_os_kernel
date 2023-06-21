@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -18,7 +18,12 @@
 #define EAGER_FPU_MODE 0
 #define LAZY_FPU_MODE  1
 
+/* RISC-V only supports eager mode. */
+#ifdef CHCORE_ARCH_RISCV64
+#define FPU_SAVING_MODE EAGER_FPU_MODE
+#else
 #define FPU_SAVING_MODE LAZY_FPU_MODE
+#endif
 
 void arch_init_thread_fpu(struct thread_ctx *ctx);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -211,6 +211,9 @@ void signal_irq_notific(struct irq_notification *irq_notifc)
 
     BUG_ON(target->thread_ctx->sc == NULL);
 
+    
+    // the interrupt direct to.
+
     BUG_ON(target->thread_ctx->affinity != NO_AFF
            && target->thread_ctx->affinity != smp_get_cpu_id());
 
@@ -272,7 +275,6 @@ int signal_notific(struct notification *notifc)
             return -EAGAIN;
         }
 
-        /* cb != NULL indicates the thread is also in the sleep list */
         if (target->sleep_state.cb != NULL) {
             if (try_dequeue_sleeper(target) == false) {
                 /* Failed to remove target in sleep list */
