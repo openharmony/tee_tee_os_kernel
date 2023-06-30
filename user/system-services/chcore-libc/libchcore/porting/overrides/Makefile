@@ -17,6 +17,9 @@ includedir = $(prefix)/include
 libdir = $(prefix)/lib
 syslibdir = /lib
 
+ohrootdir = ../..
+teekerneldir = $(ohrootdir)/base/tee/tee_tee_os_kernel
+
 MALLOC_DIR = mallocng
 SRC_DIRS = $(addprefix $(srcdir)/,src/* src/malloc/$(MALLOC_DIR) crt ldso $(COMPAT_SRC_DIRS))
 BASE_GLOBS = $(addsuffix /*.c,$(SRC_DIRS))
@@ -27,9 +30,9 @@ BASE_OBJS = $(patsubst $(srcdir)/%,%.o,$(basename $(BASE_SRCS)))
 ARCH_OBJS = $(patsubst $(srcdir)/%,%.o,$(basename $(ARCH_SRCS)))
 REPLACED_OBJS = $(sort $(subst /$(ARCH)/,/,$(ARCH_OBJS)))
 ALL_OBJS = $(addprefix obj/, $(filter-out $(REPLACED_OBJS), $(sort $(BASE_OBJS) $(ARCH_OBJS))))
-BOUNDS_CHECKING_OBJS = $(wildcard ../../../../../../../third_party/bounds_checking_function/obj/*)
+BOUNDS_CHECKING_OBJS = $(wildcard $(ohrootdir)/third_party/bounds_checking_function/obj/*)
 PWD = $(pwd)
-OH_TEE_OBJS = $(wildcard ../../../chcore-libs/sys-libs/libohtee/*.c.o)
+OH_TEE_OBJS = $(wildcard $(teekerneldir)/user/chcore-libs/sys-libs/libohtee/*.c.o)
 
 LIBC_OBJS = $(filter obj/src/%,$(ALL_OBJS)) $(filter obj/compat/%,$(ALL_OBJS))
 LDSO_OBJS = $(filter obj/ldso/%,$(ALL_OBJS:%.o=%.lo))
@@ -246,10 +249,10 @@ musl-%.tar.gz: .git
 endif
 
 libc_shared:
-	$(CC) $(CFLAGS_ALL) -c -o ../src/fileio/fileio.o ../src/fileio/fileio.c
-	$(CC) $(CFLAGS_ALL) -c -o ../src/fortify/fortify.o ../src/fortify/fortify.c
+	$(CC) $(CFLAGS_ALL) -c -o $(teekerneldir)/user/chcore-libc/src/fileio/fileio.o $(teekerneldir)/user/chcore-libc/src/fileio/fileio.c
+	$(CC) $(CFLAGS_ALL) -c -o $(teekerneldir)/user/chcore-libc/src/fortify/fortify.o $(teekerneldir)/user/chcore-libc/src/fortify/fortify.c
 	$(CC) $(CFLAGS_ALL) $(LDFLAGS_ALL) -nostdlib -shared \
-	-Wl,-e,_dlstart -o libc_shared.so $(LOBJS) $(LDSO_OBJS) $(LIBCC) $(BOUNDS_CHECKING_OBJS) $(OH_TEE_OBJS) ../src/fileio/fileio.o ../src/fortify/fortify.o
+	-Wl,-e,_dlstart -o libc_shared.so $(LOBJS) $(LDSO_OBJS) $(LIBCC) $(BOUNDS_CHECKING_OBJS) $(OH_TEE_OBJS) $(teekerneldir)/user/chcore-libc/src/fileio/fileio.o $(teekerneldir)/user/chcore-libc/src/fortify/fortify.o
 
 clean:
 	rm -rf obj lib
