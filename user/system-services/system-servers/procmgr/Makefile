@@ -31,7 +31,7 @@ SRCS += $(INCBINS_SRC)
 OBJS := $(SRCS:%=%.o)
 DEPS := $(OBJS:.o=.d)
 
-TOOL_DIR = $(ROOT_DIR)/scripts/read_procmgr_elf_tool
+TOOL_DIR = $(ROOT_DIR)/tools/read_procmgr_elf_tool
 read_procmgr_elf_tool: $(TOOL_DIR)/elf.c $(TOOL_DIR)/main.c
 	clang $^ -o $@
 

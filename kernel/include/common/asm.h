@@ -12,19 +12,19 @@
 #ifndef COMMON_ASM_H
 #define COMMON_ASM_H
 
-#define ASM_EXTABLE_32(insn, fixup) \
-    .pushsection.extable, "a";      \
-    .align 2;                       \
-    .word((insn));                  \
-    .word((fixup));                 \
-    .popsection;
+#define ASM_EXTABLE_32(insn, fixup)	\
+	.pushsection	.extable, "a";		\
+	.align		2;				\
+	.word		((insn));			\
+	.word		((fixup));			\
+	.popsection;
 
-#define ASM_EXTABLE_64(insn, fixup) \
-    .pushsection.extable, "a";      \
-    .align 4;                       \
-    .quad((insn));                  \
-    .quad((fixup));                 \
-    .popsection;
+#define ASM_EXTABLE_64(insn, fixup)	\
+	.pushsection	.extable, "a";		\
+	.align		4;				\
+	.quad		((insn));			\
+	.quad		((fixup));			\
+	.popsection;
 
 /*
  *  clang-format will change '%function' into '% function',
