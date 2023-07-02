@@ -13,6 +13,7 @@ OH_TEE_FRAMEWORK_DIR=${CHCORE_DIR}/../tee_tee_os_framework/
 OH_TEE_PREBUILD_DIR=${OH_TEE_FRAMEWORK_DIR}/prebuild/
 OH_TEE_HEADERS_DIR=${OH_TEE_PREBUILD_DIR}/tee-kernel-local-release/headers/
 OH_TEE_LIBS_DIR=${OH_TEE_PREBUILD_DIR}/tee-kernel-local-release/libs/aarch64
+THIRD_PARTY=${CHCORE_DIR}/../../../third_party/
 
 
 # compile chcore
@@ -21,9 +22,13 @@ make clean && make -j$(nproc)
 rm -rf oh_tee
 rm -rf ramdisk-dir
 
+# build bounds_checking_function
+cd ${THIRD_PARTY}/bounds_checking_function
+make CC="clang -target aarch64-linux-gnu"
+
 # link libc with bounds checking functions and libtee
 # and copy to framework
-cd user/chcore-libc/musl-libc
+cd ${CHCORE_DIR}/user/chcore-libc/musl-libc
 make libc_shared
 mkdir -p ${OH_TEE_LIBS_DIR}
 cp libc_shared.so ${OH_TEE_LIBS_DIR}/libc_shared.so
@@ -49,7 +54,7 @@ make clean && mkdir -p ramdisk-dir
 
 # copy libc into ramdisk-dir
 cd ${CHCORE_DIR}
-mkdir ramdisk-dir
+mkdir -p ramdisk-dir
 cd ${CHCORE_DIR}/user/chcore-libc/musl-libc
 cp libc_shared.so ${CHCORE_DIR}/ramdisk-dir/libc_shared.so
 
