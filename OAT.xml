@@ -71,6 +71,8 @@
                 <filteritem type="filepath" name="kernel/arch/aarch64/mm/bzero.S" desc="shield"/>
                 <filteritem type="filepath" name="kernel/arch/aarch64/mm/copy_from_user.S" desc="shield"/>
                 <filteritem type="filepath" name="kernel/arch/aarch64/sched/fpu.c" desc="shield"/>
+                <filteritem type="filepath" name="user/chcore-libc/musl-libc" desc="shield"/>
+                <filteritem type="filepath" name="user/system-services/chcore-libc/musl-libc" desc="shield"/>
             </filefilter>
         </filefilterlist>
     </oatconfig>
