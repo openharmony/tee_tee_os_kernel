@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -307,6 +307,7 @@ void chanmgr_handle_hunt_by_name(ipc_msg_t *ipc_msg, int pid, int tid)
 
     if (entry->reg_items.reg_tamgr) {
         req->hunt_by_name.taskid = entry->taskid;
+        
         if (req->hunt_by_name.taskid == GTASK_TASKID) {
             req->hunt_by_name.taskid = 0;
         }
@@ -367,6 +368,7 @@ void chanmgr_handle_get_ch_from_taskid(ipc_msg_t *ipc_msg, int pid, int tid)
         ret = -EINVAL;
         goto out;
     }
+    
     if (req->get_ch_from_taskid.taskid == 0) {
         req->get_ch_from_taskid.taskid = GTASK_TASKID;
     }

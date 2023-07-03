@@ -1,0 +1,5 @@
+build
+cxx_built
+ohtee
+*.d
+*.o

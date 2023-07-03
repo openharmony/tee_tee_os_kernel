@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -224,10 +224,7 @@ static int get_pmo_size(cap_t pmo_cap)
     int size;
 
     pmo = obj_get(current_cap_group, pmo_cap, TYPE_PMO);
-    if (!pmo) {
-        kwarn("invalid pmo in %s", __func__);
-        return 0;
-    }
+    BUG_ON(!pmo);
 
     size = pmo->size;
     obj_put(pmo);
@@ -633,7 +630,7 @@ static int ipc_send_cap(struct cap_group *target_cap_group,
         cap_buf[i] = dest_cap;
     }
 
-    /* The shared memory is accessible to both ends which is not ideal. */
+    
     r = copy_to_user((void *)uaddr, cap_buf, sizeof(*cap_buf) * cap_num);
     if (r)
         goto out_free_cap;
@@ -693,12 +690,6 @@ unsigned long sys_ipc_call(cap_t conn_cap, struct ipc_msg *ipc_msg_in_client,
                  * We hope B invokes sys_ipc_return to give
                  * the control flow back to A and unlock the
                  * related connection.
-                 *
-                 * B may do not return the control flow
-                 * back to A. If so, A will always hang and the
-                 * recycler (sys_recycle_cap_group) cannot lock
-                 * the connection. Extra mechanism like timeout
-                 * is required.
                  */
                 return -ESRCH;
             } else {
@@ -903,7 +894,6 @@ int sys_ipc_return(unsigned long ret, unsigned int cap_num)
     /* Return to client */
     thread_migrate_to_client(client, ret);
     BUG("should not reach here\n");
-    __builtin_unreachable();
 }
 
 int sys_ipc_register_cb_return(cap_t server_handler_thread_cap,

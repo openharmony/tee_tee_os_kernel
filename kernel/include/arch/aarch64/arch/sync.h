@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -89,7 +89,7 @@ static inline s64 atomic_exchange_64(s64 * ptr, s64 exchange)
         u##len oldval, newval;						\
         u32 ret;							\
          asm volatile ( "1: ldaxr   %"#width"0, %3\n"			\
-                        "   "#op"   %"#width"1, %"#width"0, %"#width"4\n" \
+                        "   "#op"   %"#width"1, %"#width"0, %"#width"4\n"\
                         "   stlxr   %w2, %"#width"1, %3\n"		\
                         "   cbnz    %w2, 1b\n"				\
                         "2:":"=&r" (oldval), "=&r"(newval),		\

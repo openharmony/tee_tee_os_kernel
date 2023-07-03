@@ -1,3 +1,15 @@
+/*
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU), Shanghai Jiao Tong University (SJTU)
+ * Licensed under the Mulan PSL v2.
+ * You can use this software according to the terms and conditions of the Mulan PSL v2.
+ * You may obtain a copy of Mulan PSL v2 at:
+ *     http://license.coscl.org.cn/MulanPSL2
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
+ * PURPOSE.
+ * See the Mulan PSL v2 for more details.
+ */
+
 /* Copyright (c) 2012, Linaro Limited
    All rights reserved.
 
@@ -51,6 +63,7 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
 #include <common/asm.h>
 
 /* Assumptions:
@@ -78,16 +91,16 @@
 #define D_h	x13
 #define E_l	src
 #define E_h	count
-#define F_l	srcend
-#define F_h	dst
+#define F_l	dst
+#define F_h	srcend
 #define tmp1	x9
 
 #define L(l) .L ## l
 
     .macro ldp1 reg1, reg2, ptr, val
-88:
+88:		
 	ldtr \reg1, [\ptr, \val];
-89:
+89:		
 	ldtr \reg2, [\ptr, \val + 8];
 
 	ASM_EXTABLE_64(88b, 97f);
@@ -95,7 +108,7 @@
     .endm
 
 	.macro ldr1 reg, ptr, val
-88:
+88:		
 	ldtr \reg, [\ptr, \val];
 
 	ASM_EXTABLE_64(88b, 97f);
@@ -103,7 +116,7 @@
 
 /* shoule use ldtrb here? But the third parameter of ldtrb can only be an immediate number*/
 	.macro ldrb1 reg, ptr, val
-88:
+88:		
 	ldrb \reg, [\ptr, \val];
 
 	ASM_EXTABLE_64(88b, 97f);
@@ -175,7 +188,7 @@ L(copy16):
 	strb	A_lw, [dstin]
 	strb	B_lw, [dstin, tmp1]
 	strb	A_hw, [dstend, -1]
-2:
+2:	
 	mov x0, #0
 	ret
 

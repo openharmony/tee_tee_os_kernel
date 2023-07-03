@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -100,11 +100,11 @@ static int set_pte_flags(pte_t *entry, vmr_prop_t flags, int kind)
         entry->l3_page.attr_index = NORMAL_MEMORY;
     }
 
-#ifdef CHCORE_KERNEL_TZ
+#ifdef CHCORE_OH_TEE
     if (flags & VMR_TZ_NS) {
         entry->l3_page.NS = AARCH64_MMU_ATTR_PAGE_NS_NON_SECURE;
     }
-#endif /* CHCORE_KERNEL_TZ */
+#endif /* CHCORE_OH_TEE */
 
     return 0;
 }
@@ -151,8 +151,7 @@ static int get_next_ptp(ptp_t *cur_ptp, u32 level, vaddr_t va, ptp_t **next_ptp,
         index = GET_L3_INDEX(va);
         break;
     default:
-        BUG("unexpected level\n");
-        return -EINVAL;
+        BUG_ON(1);
     }
 
     entry = &(cur_ptp->ent[index]);
@@ -168,8 +167,7 @@ static int get_next_ptp(ptp_t *cur_ptp, u32 level, vaddr_t va, ptp_t **next_ptp,
             /* alloc a single physical page as a new page table page
              */
             new_ptp = get_pages(0);
-            if (new_ptp == NULL)
-                return -ENOMEM;
+            BUG_ON(new_ptp == NULL);
             memset((void *)new_ptp, 0, PAGE_SIZE);
             new_ptp_paddr = virt_to_phys((vaddr_t)new_ptp);
 
@@ -265,7 +263,7 @@ void free_page_table(void *pgtbl)
                 continue;
             l2_ptp = (ptp_t *)GET_NEXT_PTP(l1_pte);
 
-            /* Interate each entry in the l2 page table */
+            /* Interate each entry in the l2 page table*/
             for (k = 0; k < PTP_ENTRIES; ++k) {
                 l2_pte = &l2_ptp->ent[k];
                 if (IS_PTE_INVALID(l2_pte->pte))
@@ -348,7 +346,7 @@ static int map_range_in_pgtbl_common(void *pgtbl, vaddr_t va, paddr_t pa,
     int i;
 
     BUG_ON(pgtbl == NULL); // alloc the root page table page at first
-    BUG_ON(va % PAGE_SIZE);
+    
     total_page_cnt = len / PAGE_SIZE + (((len % PAGE_SIZE) > 0) ? 1 : 0);
 
     l0_ptp = (ptp_t *)pgtbl;
@@ -531,10 +529,10 @@ int mprotect_in_pgtbl(void *pgtbl, vaddr_t va, size_t len, vmr_prop_t flags)
     int i;
 
     BUG_ON(pgtbl == NULL);
-    BUG_ON(va % PAGE_SIZE);
 
     l0_ptp = (ptp_t *)pgtbl;
 
+    
     total_page_cnt = len / PAGE_SIZE + (((len % PAGE_SIZE) > 0) ? 1 : 0);
     while (total_page_cnt > 0) {
         // l0
@@ -613,8 +611,15 @@ void update_pte(pte_t *dest, unsigned int level, struct common_pte_t *src)
                                                     AARCH64_MMU_ATTR_PAGE_UXN);
 
         dest->l3_page.is_valid = src->valid;
+#if !(defined(CHCORE_PLAT_RASPI3) || defined(CHCORE_PLAT_RASPI4) \
+      || defined(CHCORE_PLAT_RK3399))
+        /**
+         * Raspberry Pi platform does not support setting AF and DBM
+         * by hardware, so on these platforms we ignored them.
+         */
         dest->l3_page.AF = src->access;
         dest->l3_page.DBM = src->dirty;
+#endif
         break;
     default:
         BUG("update upper level PTEs is not supported now!\n");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -87,6 +87,7 @@ unsigned long sys_get_free_mem_size(void);
 int sys_tee_create_ns_pmo(unsigned long paddr, unsigned long size);
 
 #ifdef CHCORE_OH_TEE
+
 cap_t sys_create_ns_pmo(cap_t cap_group, unsigned long paddr,
                         unsigned long size);
 int sys_destroy_ns_pmo(cap_t cap_group, cap_t pmo);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -14,6 +14,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <time.h>
 
 /* declare that wait forever when receive msg */
 #define OS_WAIT_FOREVER 0xFFFFFFFF
@@ -23,7 +25,8 @@
 
 #define NOTIFY_MAX_LEN 152
 
-#define CH_CNT_MAX 2
+#define CH_CNT_MAX         2
+#define E_EX_TIMER_TIMEOUT 0xff
 
 #define TID_MASK   0xFFFFULL
 #define PID_OFFSET 16U

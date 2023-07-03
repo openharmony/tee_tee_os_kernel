@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -144,6 +144,9 @@ do_launch_process(int argc, char **argv, char *name, bool if_has_parent,
     lp_args.pid = proc_node->pid;
     lp_args.pcid = proc_node->pcid;
     lp_args.process_name = argv[0];
+    if (!strcmp(argv[0], "/tarunner.elf")) {
+        lp_args.process_name = name;
+    }
     lp_args.load_offset = 0;
 
 #ifdef CHCORE_OH_TEE

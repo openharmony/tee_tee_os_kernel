@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -87,6 +87,6 @@ void free_page_table(void *);
 struct vmspace *create_idle_vmspace(void);
 
 /* Interfaces on CoW implementation */
-int vmregion_record_cow_private_page(struct vmregion *vmr, void *private_page);
+void vmregion_record_cow_private_page(struct vmregion *vmr, void *private_page);
 
 #endif /* MM_VMSPACE_H */

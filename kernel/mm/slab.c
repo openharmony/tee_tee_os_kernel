@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -67,10 +67,6 @@ static void set_or_clear_slab_in_page(void *addr, unsigned long size,
     for (i = 0; i < page_num; i++) {
         page_addr = (void *)((unsigned long)addr + i * BUDDY_PAGE_SIZE);
         page = virt_to_page(page_addr);
-        if (!page) {
-            kwarn("invalid page in %s", __func__);
-            return;
-        }
         if (set_or_clear)
             page->slab = addr;
         else
@@ -267,10 +263,7 @@ void free_in_slab(void *addr)
 
     slot = (struct slab_slot_list *)addr;
     page = virt_to_page(addr);
-    if (!page) {
-        kwarn("invalid page in %s", __func__);
-        return;
-    }
+    BUG_ON(page == NULL);
 
     slab = page->slab;
     order = slab->order;

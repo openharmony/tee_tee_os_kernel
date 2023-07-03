@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -12,19 +12,19 @@
 #ifndef COMMON_ASM_H
 #define COMMON_ASM_H
 
-#define ASM_EXTABLE_32(insn, fixup) \
-    .pushsection.extable, "a";      \
-    .align 2;                       \
-    .word((insn));                  \
-    .word((fixup));                 \
-    .popsection;
+#define ASM_EXTABLE_32(insn, fixup)	\
+	.pushsection	.extable, "a";		\
+	.align		2;				\
+	.word		((insn));			\
+	.word		((fixup));			\
+	.popsection;
 
-#define ASM_EXTABLE_64(insn, fixup) \
-    .pushsection.extable, "a";      \
-    .align 4;                       \
-    .quad((insn));                  \
-    .quad((fixup));                 \
-    .popsection;
+#define ASM_EXTABLE_64(insn, fixup)	\
+	.pushsection	.extable, "a";		\
+	.align		4;				\
+	.quad		((insn));			\
+	.quad		((fixup));			\
+	.popsection;
 
 /*
  *  clang-format will change '%function' into '% function',
