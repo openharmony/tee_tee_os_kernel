@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -9,8 +9,7 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
-#ifndef THREAD_ENV_H
-#define THREAD_ENV_H
+#pragma once
 
 struct process_metadata {
     unsigned long phdr_addr;
@@ -28,5 +27,3 @@ struct process_metadata {
 #define ROOT_PHENT_SIZE_OFF 24
 #define ROOT_PHNUM_OFF      32
 #define ROOT_PHDR_ADDR_OFF  40
-
-#endif /* THREAD_ENV_H */

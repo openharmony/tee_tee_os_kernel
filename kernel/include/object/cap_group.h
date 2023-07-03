@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -27,7 +27,7 @@
 struct object_slot {
     int slot_id;
     struct cap_group *cap_group;
-    /* As bitmap is used, isvalid should be removed. Leave here to debug */
+    
     int isvalid;
     struct object *object;
     /* link copied slots pointing to the same object */
@@ -48,6 +48,7 @@ struct slot_table {
      */
     unsigned long *full_slots_bmp;
     unsigned long *slots_bmp;
+    /* XXX: Protect mapping of slot_id to slot. Maybe RCU is more suitable */
     struct rwlock table_guard;
 };
 

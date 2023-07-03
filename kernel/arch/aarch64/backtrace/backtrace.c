@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -64,10 +64,6 @@ int set_backtrace_data(void *pc_buf, void *fp_buf, void *ip)
             lr = ((u64 *)kbuf)[1];
             fp = ((u64 *)kbuf)[0];
         }
-        /*
-         * The condition of ending backtrace, fp == 0, is valid in
-         * this environment. Should be replaced as mentioned above.
-         */
         if (fp == 0 || count >= BACKTRACE_MAX_COUNT) {
             goto out;
         }
@@ -105,27 +101,23 @@ int backtrace(void)
 
     while (1) {
         if (iskernel) {
-            /* should check the fp is valid */
             lr = ((u64 *)fp)[1];
             fp = ((u64 *)fp)[0];
         } else {
-            /*
-             * Copy_from_user handles invalid access.
-             * But the function may be called with vmspace_lock
-             * held. The page fault triggered by copy_from_user
-             * may cause deadlock
-             */
             vmr = find_vmr_for_va(current_thread->vmspace, (vaddr_t)fp);
             if (vmr == NULL)
                 goto out;
+            /*
+             * We don't access the user's stack directly in the kernel.
+             * Instead, we copy the stack data including X29 & X30 from
+             * user's stack to kernel stack by using copy_from_user
+             * function. It will check the address' validity before
+             * copy the data.
+             */
             copy_from_user(kbuf, (void *)fp, 2 * sizeof(u64));
             lr = ((u64 *)kbuf)[1];
             fp = ((u64 *)kbuf)[0];
         }
-        /*
-         * The condition of ending backtrace, fp == 0, is valid in
-         * this environment. Should be replaced as mentioned above.
-         */
         if (fp == 0 || count >= BACKTRACE_MAX_COUNT)
             goto out;
 

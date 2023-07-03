@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -45,34 +45,28 @@ static void dump_pgfault_error(void)
  * Step-5: update PTE permission and PPN
  * Step-6: Flush TLB of user virtual page(user_vpa)
  */
-static int __do_general_cow(struct vmspace *vmspace, struct vmregion *vmr,
-                            vaddr_t fault_addr, pte_t *fault_pte,
-                            struct common_pte_t *pte_info)
+static void __do_general_cow(struct vmspace *vmspace, struct vmregion *vmr,
+                             vaddr_t fault_addr, pte_t *fault_pte,
+                             struct common_pte_t *pte_info)
 {
     vaddr_t kva, user_vpa;
-    void *new_page;
+    vaddr_t new_page;
     paddr_t new_pa;
     struct common_pte_t new_pte_attr;
-    int ret = 0;
 
     /* Step-1: get PA of page containing fault_addr, so as kernal VA of that
      * page */
     kva = phys_to_virt(pte_info->ppn << PAGE_SHIFT);
 
     /* Step-2: allocate a new page and record in VMR */
-    new_page = get_pages(0);
-    if (!new_page) {
-        ret = -ENOMEM;
-        goto out;
-    }
-    new_pa = virt_to_phys(new_page);
+    new_page = (vaddr_t)get_pages(0);
+    BUG_ON((void *)new_page == NULL); // Out-of-memory
+    new_pa = virt_to_phys((void *)new_page);
 
-    ret = vmregion_record_cow_private_page(vmr, new_page);
-    if (ret)
-        goto out_free_page;
+    vmregion_record_cow_private_page(vmr, (void *)new_page);
 
     /* Step-3: copy using kernel VA to new page */
-    memcpy(new_page, (void *)kva, PAGE_SIZE);
+    memcpy((void *)new_page, (void *)kva, PAGE_SIZE);
 
     /* Step-5: update PTE permission and PPN */
     new_pte_attr.ppn = new_pa >> PAGE_SHIFT;
@@ -86,12 +80,6 @@ static int __do_general_cow(struct vmspace *vmspace, struct vmregion *vmr,
     /* Step-6: Flush TLB of user virtual page(user_vpa) */
     user_vpa = ROUND_DOWN(fault_addr, PAGE_SIZE);
     flush_tlb_by_range(vmspace, user_vpa, PAGE_SIZE);
-
-    return 0;
-out_free_page:
-    free_pages(new_page);
-out:
-    return ret;
 }
 
 static int do_cow(struct vmspace *vmspace, struct vmregion *fault_vmr,
@@ -127,8 +115,7 @@ static int do_cow(struct vmspace *vmspace, struct vmregion *fault_vmr,
     if (pte_info.perm & VMR_WRITE) {
         goto out;
     }
-    ret =
-        __do_general_cow(vmspace, fault_vmr, fault_addr, fault_pte, &pte_info);
+    __do_general_cow(vmspace, fault_vmr, fault_addr, fault_pte, &pte_info);
 
 out:
     unlock(&vmspace->pgtbl_lock);
@@ -174,7 +161,13 @@ int handle_trans_fault(struct vmspace *vmspace, vaddr_t fault_addr)
         dump_pgfault_error();
         unlock(&vmspace->vmspace_lock);
 
+#if defined(CHCORE_ARCH_AARCH64)
+        /* kernel fault fixup is only supported on AArch64 and Sparc */
         return -EFAULT;
+#endif
+        sys_exit_group(-1);
+
+        BUG("should not reach here");
     }
 
     pmo = vmr->pmo;
@@ -355,7 +348,12 @@ int handle_perm_fault(struct vmspace *vmspace, vaddr_t fault_addr,
         kinfo("handle_perm_fault: no vmr found for va 0x%lx!\n", fault_addr);
         dump_pgfault_error();
         unlock(&vmspace->vmspace_lock);
+#if defined(CHCORE_ARCH_AARCH64)
         return -EFAULT;
+#else
+        sys_exit_group(-1);
+        BUG("should not reach here");
+#endif
     }
 
     declared_perm = vmr->perm;

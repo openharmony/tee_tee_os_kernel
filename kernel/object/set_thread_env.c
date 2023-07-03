@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -48,7 +48,9 @@
 #define AT_HWCAP2        26 /* extension of AT_HWCAP */
 #define AT_EXECFN        31 /* filename of program */
 
-#if defined(CHCORE_ARCH_AARCH64)
+#if defined(CHCORE_ARCH_X86_64)
+const char PLAT[] = "x86_64";
+#elif defined(CHCORE_ARCH_AARCH64)
 const char PLAT[] = "aarch64";
 #else
 const char PLAT[] = "unknown";

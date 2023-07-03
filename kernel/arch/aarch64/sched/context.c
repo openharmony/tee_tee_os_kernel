@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -21,6 +21,7 @@ void init_thread_ctx(struct thread *thread, vaddr_t stack, vaddr_t func,
     /* Fill the context of the thread */
     thread->thread_ctx->ec.reg[SP_EL0] = stack;
     thread->thread_ctx->ec.reg[ELR_EL1] = func;
+    
     thread->thread_ctx->ec.reg[SPSR_EL1] = SPSR_EL1_EL0t;
 
     /* Set the state of the thread */

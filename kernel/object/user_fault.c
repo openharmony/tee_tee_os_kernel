@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -214,6 +214,7 @@ int sys_user_fault_map(badge_t client_badge, vaddr_t fault_va, vaddr_t remap_va,
     }
 
     lock(&fault_vmspace->pgtbl_lock);
+    
     ret = map_range_in_pgtbl(
         fault_vmspace->pgtbl, fault_va, new_pa, PAGE_SIZE, perm);
     BUG_ON(ret);
@@ -257,6 +258,7 @@ void handle_user_fault(struct pmobject *pmo, vaddr_t fault_va)
     pending_thread =
         (struct fault_pending_thread *)kmalloc(sizeof(*pending_thread));
     if (!pending_thread) {
+        
         BUG_ON(1);
     }
 
@@ -268,6 +270,7 @@ void handle_user_fault(struct pmobject *pmo, vaddr_t fault_va)
     lock(&fault_pool->lock);
 
     if (if_buffer_full(fault_pool->msg_buffer_kva)) {
+        
         BUG_ON(1);
     } else {
         /* successfully fetch slot from server space */

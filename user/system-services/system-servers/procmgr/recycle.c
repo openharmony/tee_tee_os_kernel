@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS)
+ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
  * Licensed under the Mulan PSL v2.
  * You can use this software according to the terms and conditions of the Mulan PSL v2.
  * You may obtain a copy of Mulan PSL v2 at:
@@ -56,6 +56,9 @@ void *recycle_routine(void *arg)
     ret =
         usys_register_recycle_thread(notific_cap, (vaddr_t)recycle_msg_buffer);
     assert(ret == 0);
+
+    usys_set_priority(-1, 55);
+    sched_yield();
 
     while (1) {
         usys_wait(notific_cap, 1 /* Block */, NULL /* No timeout */);
