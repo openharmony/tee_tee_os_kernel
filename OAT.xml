@@ -58,7 +58,7 @@
             <filefilter name="binaryFileTypePolicyFilter" desc="Filters for binary file policies">
                 <filteritem type="filename" name="LICENSE" desc="Mulan PSL v2 license"/>
             </filefilter>
-            <filefilter name="defaultFilter" desc="Files not to check">
+            <filefilter name="defaultFilter" desc="Third-party code or files with special formats">
                 <filteritem type="filepath" name="kernel/arch/aarch64/mm/copy_to_user.S" desc="shield"/>
                 <filteritem type="filepath" name="kernel/arch/aarch64/mm/memcpy.S" desc="shield"/>
                 <filteritem type="filepath" name="kernel/arch/aarch64/mm/memmove.S" desc="shield"/>
@@ -73,6 +73,10 @@
                 <filteritem type="filepath" name="kernel/arch/aarch64/sched/fpu.c" desc="shield"/>
                 <filteritem type="filepath" name="user/chcore-libc/musl-libc" desc="shield"/>
                 <filteritem type="filepath" name="user/system-services/chcore-libc/musl-libc" desc="shield"/>
+                <filteritem type="filepath" name="user/chcore-libc/libchcore/porting/overrides/src/thread/aarch64/__unmapself.s" desc="shield"/>
+                <filteritem type="filepath" name="user/system-services/chcore-libc/libchcore/porting/overrides/src/thread/aarch64/__unmapself.s" desc="shield"/>
+                <filteritem type="filepath" name="user/chcore-libc/libchcore/porting/patches/src/internal/pthread_t.struct" desc="shield"/>
+                <filteritem type="filepath" name="user/system-services/chcore-libc/libchcore/porting/patches/src/internal/pthread_t.struct" desc="shield"/>
             </filefilter>
         </filefilterlist>
     </oatconfig>
