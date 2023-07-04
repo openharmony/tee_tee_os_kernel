@@ -24,19 +24,18 @@
 #define info(fmt, ...) \
     printf("<%s:%d>: " fmt, __func__, __LINE__, ##__VA_ARGS__)
 
-bool __str_empty(const char *str)
+/* check name empty at ipc entry */
+static inline bool __chan_name_empty(char *name)
 {
-    return str == NULL || strlen(str) == 0;
+    /* to avoid overflow */
+    name[CHAN_REQ_NAME_LEN - 1] = 0;
+    return strlen(name) == 0;
 }
 
-uint32_t __hash_name(const char *name)
+static uint32_t __hash_name(const char *name)
 {
     size_t i, len;
     uint32_t hashsum = 0;
-
-    if (__str_empty(name)) {
-        return 0;
-    }
 
     len = strlen(name);
     for (i = 0; i < len; i++) {
@@ -46,12 +45,12 @@ uint32_t __hash_name(const char *name)
     return hashsum;
 }
 
-uint32_t __hash_taskid(uint32_t taskid, int ch_num)
+static inline uint32_t __hash_taskid(uint32_t taskid, int ch_num)
 {
     return taskid * HASH_BASE + ch_num;
 }
 
-bool __ch_num_valid(int ch_num)
+static inline bool __ch_num_valid(int ch_num)
 {
     return ch_num == 0 || ch_num == 1;
 }
@@ -105,15 +104,11 @@ void chanmgr_deinit(void)
 {
 }
 
-struct channel_entry *__get_entry_by_name(const char *name)
+static struct channel_entry *__get_entry_by_name(const char *name)
 {
     struct hlist_head *bucket;
     struct channel_entry *entry;
     uint32_t hashsum;
-
-    if (__str_empty(name)) {
-        return NULL;
-    }
 
     hashsum = __hash_name(name);
     bucket = htable_get_bucket(&chanmgr.name2chan, hashsum);
@@ -126,7 +121,7 @@ struct channel_entry *__get_entry_by_name(const char *name)
     return NULL;
 }
 
-struct channel_entry *__get_entry_by_cid(uint32_t taskid, int ch_num)
+static struct channel_entry *__get_entry_by_cid(uint32_t taskid, int ch_num)
 {
     struct hlist_head *bucket;
     struct channel_entry *entry;
@@ -163,7 +158,7 @@ void chanmgr_handle_create_channel(ipc_msg_t *ipc_msg, badge_t badge, int pid,
     memcpy(&reg_items,
            &req->create_channel.reg_items,
            sizeof(struct reg_items_st));
-    if (__str_empty(req->create_channel.name)) {
+    if (__chan_name_empty(req->create_channel.name)) {
         reg_items.reg_name = false;
         reg_items.reg_tamgr = false;
     }
@@ -253,7 +248,7 @@ void chanmgr_handle_remove_channel(ipc_msg_t *ipc_msg, badge_t badge, int pid,
 
     pthread_mutex_lock(&chanmgr.lock);
 
-    if (!__str_empty(req->remove_channel.name)) {
+    if (!__chan_name_empty(req->remove_channel.name)) {
         entry = __get_entry_by_name(req->remove_channel.name);
     }
     if (entry == NULL && __ch_num_valid(req->remove_channel.ch_num)) {
@@ -294,7 +289,7 @@ void chanmgr_handle_hunt_by_name(ipc_msg_t *ipc_msg, int pid, int tid)
 
     pthread_mutex_lock(&chanmgr.lock);
 
-    if (__str_empty(req->hunt_by_name.name)) {
+    if (__chan_name_empty(req->hunt_by_name.name)) {
         ret = -EINVAL;
         goto out;
     }
@@ -307,7 +302,7 @@ void chanmgr_handle_hunt_by_name(ipc_msg_t *ipc_msg, int pid, int tid)
 
     if (entry->reg_items.reg_tamgr) {
         req->hunt_by_name.taskid = entry->taskid;
-        
+        /* TODO: gtask's taskid is 0 */
         if (req->hunt_by_name.taskid == GTASK_TASKID) {
             req->hunt_by_name.taskid = 0;
         }
@@ -328,7 +323,7 @@ void chanmgr_handle_get_ch_from_path(ipc_msg_t *ipc_msg, int pid, int tid)
 
     pthread_mutex_lock(&chanmgr.lock);
 
-    if (__str_empty(req->get_ch_from_path.name)) {
+    if (__chan_name_empty(req->get_ch_from_path.name)) {
         ret = -EINVAL;
         goto out;
     }
@@ -368,7 +363,7 @@ void chanmgr_handle_get_ch_from_taskid(ipc_msg_t *ipc_msg, int pid, int tid)
         ret = -EINVAL;
         goto out;
     }
-    
+    /* TODO: gtask's taskid is 0 */
     if (req->get_ch_from_taskid.taskid == 0) {
         req->get_ch_from_taskid.taskid = GTASK_TASKID;
     }

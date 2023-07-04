@@ -309,6 +309,7 @@ int launch_process_with_pmos_caps(struct launch_process_args *lp_args)
     cg_args.pcid = pcid;
 #ifdef CHCORE_OH_TEE
     cg_args.pid = pid;
+    cg_args.heap_size = lp_args->heap_size;
     if (lp_args->puuid != NULL) {
         cg_args.puuid = (vaddr_t)&lp_args->puuid->uuid;
     } else {
@@ -353,6 +354,15 @@ int launch_process_with_pmos_caps(struct launch_process_args *lp_args)
                main_stack_cap);
         goto fail;
     }
+#ifdef CHCORE_OH_TEE
+    ret = usys_transfer_pmo_owner(main_stack_cap, new_process_cap);
+    if (ret < 0) {
+        printf("%s: fail to transfer main_stack_cap's owner ret %d\n",
+               __func__,
+               ret);
+        goto fail;
+    }
+#endif /* CHCORE_OH_TEE */
 
     /* Map a forbidden pmo in case of stack overflow */
     forbid_area_cap = pmo_requests[1].ret_cap;
@@ -362,6 +372,15 @@ int launch_process_with_pmos_caps(struct launch_process_args *lp_args)
                forbid_area_cap);
         goto fail;
     }
+#ifdef CHCORE_OH_TEE
+    ret = usys_transfer_pmo_owner(forbid_area_cap, new_process_cap);
+    if (ret < 0) {
+        printf("%s: fail to transfer forbid_area_cap's owner ret %d\n",
+               __func__,
+               ret);
+        goto fail;
+    }
+#endif /* CHCORE_OH_TEE */
 
     /* Step-4: Construct auxiliary vector on the stack. */
     stack_top = MAIN_THREAD_STACK_BASE + stack_size;

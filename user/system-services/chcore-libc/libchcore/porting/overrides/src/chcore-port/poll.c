@@ -21,13 +21,9 @@
 #include <raw_syscall.h>
 #include <chcore/container/list.h>
 #include <chcore/ipc.h>
-#include <chcore-internal/lwip_defs.h>
 
 #include "fd.h"
 #include "poll.h"
-
-#include "socket.h" /* socket server poll function */
-#include "timerfd.h" /* timerfd async poll function */
 
 // #define chcore_poll_debug
 

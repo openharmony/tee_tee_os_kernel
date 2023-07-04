@@ -36,6 +36,7 @@ struct cap_group_args {
 #ifdef CHCORE_OH_TEE
     int pid;
     vaddr_t puuid;
+    unsigned long heap_size;
 #endif /* CHCORE_OH_TEE */
 };
 
@@ -96,6 +97,7 @@ struct launch_process_args {
 
 #ifdef CHCORE_OH_TEE
     spawn_uuid_t *puuid;
+    unsigned long heap_size;
 #endif /* CHCORE_OH_TEE */
 
     /** output parameters */
