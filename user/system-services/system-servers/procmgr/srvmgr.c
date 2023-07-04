@@ -120,6 +120,7 @@ do_launch_process(int argc, char **argv, char *name, bool if_has_parent,
         lp_args.envp_argv = NULL;
 #ifdef CHCORE_OH_TEE
         lp_args.puuid = NULL;
+        lp_args.heap_size = (unsigned long)-1;
 #endif /* CHCORE_OH_TEE */
     } else {
         lp_args.stack_size = np_args->stack_size;
@@ -127,6 +128,7 @@ do_launch_process(int argc, char **argv, char *name, bool if_has_parent,
         lp_args.envp_argv = np_args->envp_argv;
 #ifdef CHCORE_OH_TEE
         lp_args.puuid = &np_args->puuid;
+        lp_args.heap_size = np_args->heap_size;
 #endif /* CHCORE_OH_TEE */
     }
     /* Init launch_process_args */

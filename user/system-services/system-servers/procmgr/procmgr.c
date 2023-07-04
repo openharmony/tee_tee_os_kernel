@@ -82,9 +82,11 @@ static void handle_spawn(ipc_msg_t *ipc_msg, badge_t client_badge,
     np_args.envp_argv = envp_argv;
     if (pr->spawn.attr_valid) {
         np_args.stack_size = pr->spawn.attr.stack_size;
+        np_args.heap_size = pr->spawn.attr.heap_size;
         memcpy(&np_args.puuid, &pr->spawn.attr.uuid, sizeof(spawn_uuid_t));
     } else {
         np_args.stack_size = MAIN_THREAD_STACK_SIZE;
+        np_args.heap_size = (unsigned long)-1;
         memset(&np_args.puuid, 0, sizeof(spawn_uuid_t));
     }
 
@@ -208,6 +210,7 @@ static void handle_wait(ipc_msg_t *ipc_msg, badge_t client_badge,
         /* Found. */
         debug("Found process with pid=%d proc=%p\n", pr->pid, child);
 
+        pthread_mutex_lock(&child->wait_lock);
         if (READ_ONCE(child->state) == PROC_STATE_EXIT) {
             /*
              * The exit status has been set but the node
@@ -229,12 +232,13 @@ static void handle_wait(ipc_msg_t *ipc_msg, badge_t client_badge,
             free_proc_node_resource(child);
             free(child);
             pthread_mutex_unlock(&recycle_lock);
+            pthread_mutex_unlock(&child->wait_lock);
             pthread_mutex_unlock(&client_proc->lock);
             ipc_return(ipc_msg, ret_pid);
         } else {
-            /* Child process has not exited yet, try again later */
             pthread_mutex_unlock(&client_proc->lock);
-            usys_yield();
+            pthread_cond_wait(&child->wait_cv, &child->wait_lock);
+            pthread_mutex_unlock(&child->wait_lock);
         }
     }
 }
