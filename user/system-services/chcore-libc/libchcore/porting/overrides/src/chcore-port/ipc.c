@@ -31,7 +31,6 @@
 #include <assert.h>
 #include "pthread_impl.h"
 #include "fs_client_defs.h"
-#include <chcore-internal/lwip_defs.h>
 #include <chcore/pthread.h>
 
 /*

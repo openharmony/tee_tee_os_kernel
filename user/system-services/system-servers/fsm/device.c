@@ -14,11 +14,9 @@
 #include <string.h>
 #include <fcntl.h>
 #include <pthread.h>
+#include <stdio.h>
 #include <chcore-internal/fs_defs.h>
-#include <chcore-internal/lwip_defs.h>
 #include <chcore/ipc.h>
-#include <chcore-internal/procmgr_defs.h>
-#include <chcore-internal/sd_defs.h>
 #include <chcore/services.h>
 
 #include "device.h"
@@ -45,96 +43,9 @@ static void initialize_dparts(void)
     memcpy(dparts[4].device_name, "sda5", 5);
 }
 
-/* Get sd_card's first block (mbr) */
-static int sd_read_mbr(char *mbr)
-{
-    struct sd_msg *sd_req;
-    ipc_msg_t *sd_ipc_msg;
-    ipc_struct_t *sd_ipc_struct;
-
-    sd_ipc_struct = chcore_conn_srv(SERVER_SD_CARD);
-    if (sd_ipc_struct == NULL) {
-        errno = ENODEV;
-        return -1;
-    }
-    sd_ipc_msg = ipc_create_msg(sd_ipc_struct, sizeof(struct sd_msg));
-    sd_req = (struct sd_msg *)ipc_get_msg_data(sd_ipc_msg);
-    sd_req->req = SD_REQ_READ;
-    sd_req->op_size = MBR_SIZE;
-    sd_req->block_number = 0;
-    ipc_call(sd_ipc_struct, sd_ipc_msg);
-
-    /* fill mbr */
-    memcpy(mbr, sd_req->pbuffer, MBR_SIZE);
-    ipc_destroy_msg(sd_ipc_msg);
-
-    return 0;
-}
-
 static int chcore_parse_devices(void)
 {
-    int i;
-    char mbr[MBR_SIZE] = {0};
-
-    /* check if 'dparts' ready */
-    if (dparts_inited) {
-        return 0;
-    }
-
-    /* init 'dparts' */
-    initialize_dparts();
-
-    /* fill 'mbr' from sd_card. mbr would remain all zeros if failed */
-    if (sd_read_mbr(mbr) < 0) {
-        printf("[WARNING] cannot connect to sd server\n");
-    }
-
-    /*
-     * parse mbr entrys to get file system type,
-     * note that fields in struct pinfo may be all zeros
-     */
-    partition_struct_t *pinfo;
-    /**
-     * Currently we let first MBR_MAX_PARTS_CNT dparts points
-     * to MBR main partitions. And the last dparts is used for
-     * littlefs.
-     */
-    for (i = 0; i < MBR_MAX_PARTS_CNT; i++) {
-        pinfo = (partition_struct_t *)(mbr + SD_PARTITION_INFO_OFFSET
-                                       + i * SD_PARTITION_INFO_SIZE);
-        dparts[i].valid = pinfo->fs_id ? true : false;
-        dparts[i].partition_index = i + 1;
-        dparts[i].mounted = false;
-        dparts[i].partition_lba = pinfo->lba;
-        if (pinfo->fs_id == FAT32_PARTITION) {
-            /* FAT32 */
-            dparts[i].partition_type = FAT32_PARTITION;
-            dparts[i].server_id = SERVER_FAT32_FS;
-        } else if (pinfo->fs_id == EXT4_PARTITION) {
-            /* EXT4 */
-            dparts[i].partition_type = EXT4_PARTITION;
-            dparts[i].server_id = SERVER_EXT4_FS;
-        } else if (pinfo->fs_id == 0) {
-            /* do nothing */
-        } else {
-            printf("[WARNING] not supported fs type %x\n", pinfo->fs_id);
-        }
-    }
-
-    if (chcore_conn_srv(SERVER_LITTLEFS) != NULL) {
-        dparts[MAX_PARTS_CNT - 1].valid = true;
-        dparts[MAX_PARTS_CNT - 1].partition_index = 5;
-        dparts[MAX_PARTS_CNT - 1].mounted = false;
-        dparts[MAX_PARTS_CNT - 1].partition_lba = 0;
-        dparts[MAX_PARTS_CNT - 1].partition_type = LITTLEFS_PARTITION;
-        dparts[MAX_PARTS_CNT - 1].server_id = SERVER_LITTLEFS;
-    } else {
-        printf("[WARNING] cannot connect to flash server\n");
-        dparts[MAX_PARTS_CNT - 1].valid = false;
-    }
-
-    dparts_inited = true;
-    return 0;
+    return -1;
 }
 
 /*

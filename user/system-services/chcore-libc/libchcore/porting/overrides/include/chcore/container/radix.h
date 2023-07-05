@@ -23,7 +23,6 @@
 extern "C" {
 #endif
 
-
 #define RADIX_NODE_BITS (9)
 #define RADIX_NODE_SIZE (1 << (RADIX_NODE_BITS))
 #define RADIX_NODE_MASK (RADIX_NODE_SIZE - 1)
@@ -47,7 +46,6 @@ struct radix {
 
 static inline void init_radix(struct radix *radix)
 {
-    
     /* radix->root = calloc(1, sizeof(*radix->root)); */
     radix->root = (struct radix_node *)calloc(1, sizeof(*radix->root));
     BUG_ON(!radix->root);
@@ -63,7 +61,6 @@ static inline void init_radix_w_deleter(struct radix *radix,
 
 static inline struct radix_node *new_radix_node(void)
 {
-    
     /* struct radix_node *n = calloc(1, sizeof(struct radix_node)); */
     struct radix_node *n =
         (struct radix_node *)calloc(1, sizeof(struct radix_node));
@@ -144,7 +141,6 @@ static inline void *radix_get(struct radix *radix, u64 key)
     k = index[0];
     return node->values[k];
 }
-
 
 __attribute__((__unused__)) static inline int
 radix_del(struct radix *radix, u64 key, int delete_value)

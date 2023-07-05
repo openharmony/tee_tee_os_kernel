@@ -11,7 +11,6 @@
  */
 
 #define _GNU_SOURCE
-
 #include <assert.h>
 #include <bits/alltypes.h>
 #include <bits/syscall.h>
@@ -46,19 +45,16 @@
 #include <chcore/defs.h>
 #include <chcore-internal/fs_defs.h>
 #include <chcore/ipc.h>
-#include <chcore-internal/lwip_defs.h>
 #include <chcore-internal/procmgr_defs.h>
 #include "futex.h"
 #include "eventfd.h"
 #include "pipe.h"
 #include "timerfd.h"
-#include "socket.h"
 #include "file.h"
 #include "fs_client_defs.h"
 #include "chcore_mman.h"
 #include <chcore-internal/fs_debug.h>
 #include <chcore/memory.h>
-#include "chcore_shm.h"
 #include "chcore_kill.h"
 
 #define debug(fmt, ...) printf("[DEBUG] " fmt, ##__VA_ARGS__)
@@ -302,10 +298,7 @@ long __syscall1(long n, long a)
     case SYS_rmdir:
         return __syscall3(SYS_unlinkat, AT_FDCWD, a, AT_REMOVEDIR);
 #endif
-#ifdef CHCORE_SERVER_POSIX_SHM
-    case SYS_shmdt:
-        return chcore_shmdt((void *)a);
-#endif
+
     case SYS_close:
         return chcore_close(a);
     case SYS_umask:
@@ -511,14 +504,7 @@ long __syscall3(long n, long a, long b, long c)
     case SYS_open:
         return __syscall6(SYS_open, a, b, c, 0, 0, 0);
 #endif
-#ifdef CHCORE_SERVER_POSIX_SHM
-    case SYS_shmget:
-        return chcore_shmget(a, b, c);
-    case SYS_shmat:
-        return (unsigned long)chcore_shmat(a, (void *)b, c);
-    case SYS_shmctl:
-        return chcore_shmctl(a, b, (void *)c);
-#endif
+
     case SYS_readv:
         return __syscall6(SYS_readv, a, b, c, 0, 0, 0);
     case SYS_ioctl: {
@@ -806,8 +792,6 @@ long __syscall5(long n, long a, long b, long c, long d, long e)
 long __syscall6(long n, long a, long b, long c, long d, long e, long f)
 {
     ipc_msg_t *ipc_msg = 0;
-    struct lwip_request lr = {0};
-    struct lwip_request *lr_ptr = 0;
     struct fd_record_extension *fd_ext;
     struct fs_request fr;
     ipc_struct_t *_fs_ipc_struct;
@@ -866,60 +850,7 @@ long __syscall6(long n, long a, long b, long c, long d, long e, long f)
     case SYS_ioctl: {
         return chcore_ioctl(a, b, (void *)c);
     }
-    /* Network syscalls */
-    case SYS_socket: {
-        return chcore_socket(a, b, c);
-    }
-    case SYS_setsockopt: {
-        return chcore_setsocketopt(a, b, c, (const void *)d, e);
-    }
-    case SYS_getsockopt: {
-        return chcore_getsocketopt(
-            a, b, c, (void *)d, (socklen_t * restrict) e);
-    }
-    case SYS_getsockname: {
-        return chcore_getsockname(
-            a, (struct sockaddr * restrict) b, (socklen_t * restrict) c);
-    }
-    case SYS_getpeername: {
-        return chcore_getpeername(
-            a, (struct sockaddr * restrict) b, (socklen_t * restrict) c);
-    }
-    case SYS_bind: {
-        return chcore_bind(a, (const struct sockaddr *)b, (socklen_t)c);
-    }
-    case SYS_listen: {
-        return chcore_listen(a, b);
-    }
-    case SYS_accept: {
-        return chcore_accept(
-            a, (struct sockaddr * restrict) b, (socklen_t * restrict) c);
-    }
-    case SYS_connect: {
-        return chcore_connect(a, (const struct sockaddr *)b, (socklen_t)c);
-    }
-    case SYS_sendto: {
-        return chcore_sendto(
-            a, (const void *)b, c, d, (const struct sockaddr *)e, f);
-    }
-    case SYS_sendmsg: {
-        return chcore_sendmsg(a, (const struct msghdr *)b, c);
-    }
 
-    case SYS_recvfrom: {
-        return chcore_recvfrom(a,
-                               (void *restrict)b,
-                               c,
-                               d,
-                               (struct sockaddr * restrict) e,
-                               (socklen_t * restrict) f);
-    }
-    case SYS_recvmsg: {
-        return chcore_recvmsg(a, (struct msghdr *)b, c);
-    }
-    case SYS_shutdown: {
-        return chcore_shutdown(a, b);
-    }
 #ifdef SYS_open
     case SYS_open:
         return __syscall6(SYS_openat, AT_FDCWD, a, b, c, 0, 0);

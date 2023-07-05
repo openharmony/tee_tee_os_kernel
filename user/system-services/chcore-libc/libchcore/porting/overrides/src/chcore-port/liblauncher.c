@@ -100,10 +100,8 @@ pid_t chcore_new_process_spawn(int argc, char *__argv[], char **envp,
     pr->spawn.envc = i;
 
     ret = ipc_call(procmgr_ipc_struct, ipc_msg);
-    if (ret >= 0) {
-        if (tid) {
-            *tid = pr->spawn.main_thread_id;
-        }
+    if (ret >= 0 && tid != NULL) {
+        *tid = pr->spawn.main_thread_id;
     }
 
 out_destroy_msg:

@@ -17,7 +17,6 @@
 #include <sys/ioctl.h>
 
 #include <chcore-internal/fs_defs.h>
-#include <chcore-internal/lwip_defs.h>
 #include <chcore/ipc.h>
 #include <chcore-internal/procmgr_defs.h>
 #include <pthread.h>
