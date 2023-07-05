@@ -24,6 +24,10 @@ extern "C" {
 void usys_putstr(vaddr_t buffer, size_t size);
 char usys_getc(void);
 
+int usys_tee_push_rdr_update_addr(paddr_t addr, size_t size, bool is_cache_mem,
+                                  char *chip_type_buff, size_t buff_len);
+int usys_debug_rdr_logitem(char *str, size_t str_len);
+
 int usys_set_priority(cap_t thread_cap, unsigned int prio);
 int usys_get_pmo_paddr(cap_t pmo_cap, unsigned long *buf);
 cap_t usys_create_device_pmo(unsigned long paddr, unsigned long size);
@@ -86,6 +90,7 @@ void usys_cache_config(unsigned long option);
 cap_t usys_create_ns_pmo(cap_t cap_group, unsigned long paddr,
                          unsigned long size);
 int usys_destroy_ns_pmo(cap_t cap_group, cap_t pmo);
+int usys_transfer_pmo_owner(cap_t pmo, cap_t cap_group);
 cap_t usys_create_tee_shared_pmo(cap_t cap_group, void *uuid,
                                  unsigned long size, cap_t *self_cap);
 cap_t usys_get_thread_id(cap_t thread_cap);

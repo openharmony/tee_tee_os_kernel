@@ -30,6 +30,22 @@ char usys_getc(void)
     return chcore_syscall0(CHCORE_SYS_getc);
 }
 
+int usys_tee_push_rdr_update_addr(paddr_t addr, size_t size, bool is_cache_mem,
+                                  char *chip_type_buff, size_t buff_len)
+{
+    return chcore_syscall5(CHCORE_SYS_tee_push_rdr_update_addr,
+                           addr,
+                           size,
+                           is_cache_mem,
+                           chip_type_buff,
+                           buff_len);
+}
+
+int usys_debug_rdr_logitem(char *str, size_t str_len)
+{
+    return chcore_syscall2(CHCORE_SYS_debug_rdr_logitem, str, str_len);
+}
+
 _Noreturn void usys_exit(unsigned long ret)
 {
     chcore_syscall1(CHCORE_SYS_thread_exit, ret);
@@ -276,6 +292,11 @@ cap_t usys_create_ns_pmo(cap_t cap_group, unsigned long paddr,
 int usys_destroy_ns_pmo(cap_t cap_group, cap_t pmo)
 {
     return chcore_syscall2(CHCORE_SYS_destroy_ns_pmo, cap_group, pmo);
+}
+
+int usys_transfer_pmo_owner(cap_t pmo, cap_t cap_group)
+{
+    return chcore_syscall2(CHCORE_SYS_transfer_pmo_owner, pmo, cap_group);
 }
 
 cap_t usys_create_tee_shared_pmo(cap_t cap_group, void *uuid,

@@ -114,6 +114,9 @@
 #define CHCORE_SYS_putstr 0
 #define CHCORE_SYS_getc   1
 
+#define CHCORE_SYS_tee_push_rdr_update_addr 5
+#define CHCORE_SYS_debug_rdr_logitem        6
+
 /* PMO */
 /* - single */
 #define CHCORE_SYS_create_pmo        10
@@ -126,6 +129,7 @@
 #define CHCORE_SYS_create_ns_pmo         16
 #define CHCORE_SYS_destroy_ns_pmo        17
 #define CHCORE_SYS_create_tee_shared_pmo 19
+#define CHCORE_SYS_transfer_pmo_owner    20
 #endif /* CHCORE_OH_TEE */
 
 /* - address translation */

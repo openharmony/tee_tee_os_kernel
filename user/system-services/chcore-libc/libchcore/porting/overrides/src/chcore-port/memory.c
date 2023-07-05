@@ -295,13 +295,11 @@ void *chcore_alloc_dma_mem(unsigned long size,
 
     void *res = chcore_auto_map_pmo(dma_handle->pmo, size, VM_READ | VM_WRITE);
     if (res == NULL) {
-        
         return NULL;
     }
 
     ret = usys_get_phys_addr(res, &dma_handle->paddr);
     if (ret != 0) {
-        
         return NULL;
     }
     dma_handle->vaddr = (unsigned long)res;

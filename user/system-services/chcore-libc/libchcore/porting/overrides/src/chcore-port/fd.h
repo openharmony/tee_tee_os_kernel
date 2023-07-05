@@ -15,7 +15,7 @@
 #include "chcore/container/hashtable.h"
 #include "chcore/ipc.h"
 #include <termios.h>
-#include <chcore-internal/lwip_defs.h>
+#include <sys/uio.h>
 
 #include "poll.h"
 #include "fs_client_defs.h"

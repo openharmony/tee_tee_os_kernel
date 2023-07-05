@@ -25,7 +25,6 @@
 #include "pipe.h"
 #include "fd.h"
 
-
 #define PIPE_BUF_SIZE 1024
 struct pipe_file {
     char buf[PIPE_BUF_SIZE];
@@ -294,7 +293,6 @@ static ssize_t chcore_pipe_write(int fd, void *buf, size_t count)
     return ret;
 }
 
-
 static int chcore_pipe_close(int fd)
 {
     return 0;
@@ -304,8 +302,6 @@ long chcore_pipe_llseek(int fd, long offset, int whence)
 {
     return -ENOSYS;
 }
-
-
 
 /* PIPE */
 struct fd_ops pipe_op = {

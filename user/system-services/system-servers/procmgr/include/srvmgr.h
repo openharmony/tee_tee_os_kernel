@@ -24,6 +24,7 @@ struct new_process_args {
     unsigned long stack_size;
 #ifdef CHCORE_OH_TEE
     spawn_uuid_t puuid;
+    unsigned long heap_size;
 #endif /* CHCORE_OH_TEE */
 };
 

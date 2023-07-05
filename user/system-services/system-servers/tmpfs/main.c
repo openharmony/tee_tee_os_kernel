@@ -102,7 +102,6 @@ int tmpfs_load_image(const char *start)
         }
     }
 
-    
     err = tmpfs_mkdir("/tafs", 0);
     BUG_ON(err);
 
