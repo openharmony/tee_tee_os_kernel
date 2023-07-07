@@ -26,7 +26,8 @@
 #include "mmap.h"
 
 static int pmo_init(struct pmobject *pmo, pmo_type_t type, size_t len,
-                    paddr_t paddr);
+                    paddr_t paddr, struct cap_group *cap_group);
+void pmo_deinit(void *pmo_ptr);
 
 /*
  * @paddr is only used when creating device pmo;
@@ -44,14 +45,14 @@ cap_t create_pmo(size_t size, pmo_type_t type, struct cap_group *cap_group,
         goto out_fail;
     }
 
-    r = pmo_init(pmo, type, size, paddr);
+    r = pmo_init(pmo, type, size, paddr, cap_group);
     if (r)
         goto out_free_obj;
 
     cap = cap_alloc(cap_group, pmo);
     if (cap < 0) {
         r = cap;
-        goto out_free_obj;
+        goto out_pmo_deinit;
     }
 
     if (new_pmo != NULL)
@@ -59,6 +60,8 @@ cap_t create_pmo(size_t size, pmo_type_t type, struct cap_group *cap_group,
 
     return cap;
 
+out_pmo_deinit:
+    pmo_deinit(pmo);
 out_free_obj:
     obj_free(pmo);
 out_fail:
@@ -444,9 +447,17 @@ out_obj_put_pmo:
  * @paddr is only used when @type == PMO_DEVICE || @type == PMO_TZ_NS.
  */
 static int pmo_init(struct pmobject *pmo, pmo_type_t type, size_t len,
-                    paddr_t paddr)
+                    paddr_t paddr, struct cap_group *cap_group)
 {
     int ret = 0;
+
+#ifdef CHCORE_OH_TEE
+    lock(&cap_group->heap_size_lock);
+    if (cap_group->heap_size_used + len > cap_group->heap_size_limit) {
+        ret = -ENOMEM;
+        goto out;
+    }
+#endif /* CHCORE_OH_TEE */
 
     memset((void *)pmo, 0, sizeof(*pmo));
 
@@ -547,6 +558,16 @@ static int pmo_init(struct pmobject *pmo, pmo_type_t type, size_t len,
         break;
     }
     }
+#ifdef CHCORE_OH_TEE
+out:
+    if (ret == 0) {
+        cap_group->heap_size_used += len;
+        lock_init(&pmo->owner_lock);
+        pmo->owner = obj_get(cap_group, CAP_GROUP_OBJ_ID, TYPE_CAP_GROUP);
+        BUG_ON(pmo->owner == NULL);
+    }
+    unlock(&cap_group->heap_size_lock);
+#endif /* CHCORE_OH_TEE */
     return ret;
 }
 
@@ -584,6 +605,13 @@ void pmo_deinit(void *pmo_ptr)
 
     pmo = (struct pmobject *)pmo_ptr;
     type = pmo->type;
+
+#ifdef CHCORE_OH_TEE
+    lock(&pmo->owner->heap_size_lock);
+    pmo->owner->heap_size_used -= pmo->size;
+    unlock(&pmo->owner->heap_size_lock);
+    obj_put(pmo->owner);
+#endif /* CHCORE_OH_TEE */
 
     switch (type) {
     case PMO_DATA:
@@ -941,6 +969,77 @@ out_free_uuid:
     if (!success) {
         kfree(private);
     }
+out:
+    return ret;
+}
+
+int sys_transfer_pmo_owner(cap_t pmo, cap_t cap_group)
+{
+    int ret;
+    bool put_cap_group = true;
+    struct pmobject *pmobject;
+    struct cap_group *target_cap_group;
+
+    pmobject = obj_get(current_cap_group, pmo, TYPE_PMO);
+    if (pmobject == NULL) {
+        ret = -ECAPBILITY;
+        goto out;
+    }
+
+    target_cap_group = obj_get(current_cap_group, cap_group, TYPE_CAP_GROUP);
+    if (target_cap_group == NULL) {
+        ret = -ECAPBILITY;
+        goto out_put_pmo;
+    }
+
+    if (target_cap_group == current_cap_group) {
+        ret = 0;
+        goto out_put_cap_group;
+    }
+
+    lock(&pmobject->owner_lock);
+    if (pmobject->owner == current_cap_group) {
+        if (target_cap_group < current_cap_group) {
+            lock(&target_cap_group->heap_size_lock);
+            lock(&current_cap_group->heap_size_lock);
+        } else {
+            lock(&current_cap_group->heap_size_lock);
+            lock(&target_cap_group->heap_size_lock);
+        }
+
+        if (target_cap_group->heap_size_used + pmobject->size
+            <= target_cap_group->heap_size_limit) {
+            current_cap_group->heap_size_used -= pmobject->size;
+            target_cap_group->heap_size_used += pmobject->size;
+
+            pmobject->owner = target_cap_group;
+            /* CANNOT put target_cap_group because pmo has this ref */
+            put_cap_group = false;
+            obj_put(current_cap_group);
+
+            ret = 0;
+        } else {
+            ret = -ENOMEM;
+        }
+
+        if (target_cap_group < current_cap_group) {
+            unlock(&current_cap_group->heap_size_lock);
+            unlock(&target_cap_group->heap_size_lock);
+        } else {
+            unlock(&target_cap_group->heap_size_lock);
+            unlock(&current_cap_group->heap_size_lock);
+        }
+    } else {
+        ret = -EINVAL;
+    }
+    unlock(&pmobject->owner_lock);
+
+out_put_cap_group:
+    if (put_cap_group) {
+        obj_put(target_cap_group);
+    }
+out_put_pmo:
+    obj_put(pmobject);
 out:
     return ret;
 }

@@ -9,14 +9,6 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
-#ifndef ARCH_AARCH64_ARCH_TRUSTZONE_LOGGER_H
-#define ARCH_AARCH64_ARCH_TRUSTZONE_LOGGER_H
+#pragma once
 
-#include <object/memory.h>
-
-extern volatile bool using_logger;
-
-void logger_init(paddr_t log_paddr);
-void logger_send(int c);
-
-#endif /* ARCH_AARCH64_ARCH_TRUSTZONE_LOGGER_H */
+#define MAX_IRQ_NUM 128

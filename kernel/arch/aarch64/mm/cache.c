@@ -167,7 +167,7 @@ void arch_flush_cache(vaddr_t start, size_t len, int op_type)
     u64 real_start;
     u64 real_end;
 
-    BUG_ON(len < 0);
+    BUG_ON((long)len < 0);
     real_start = ROUND_DOWN(start, CACHE_LINE_LENGTH);
     real_end = ROUND_UP(start + len, CACHE_LINE_LENGTH);
     BUG_ON(real_start > real_end);

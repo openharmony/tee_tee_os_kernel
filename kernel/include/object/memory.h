@@ -58,6 +58,10 @@ struct pmobject {
      * others: NULL
      */
     void *private;
+#ifdef CHCORE_OH_TEE
+    struct lock owner_lock;
+    struct cap_group *owner;
+#endif /* CHCORE_OH_TEE */
 };
 
 /* kernel internal interfaces */
@@ -94,6 +98,7 @@ int sys_destroy_ns_pmo(cap_t cap_group, cap_t pmo);
 
 cap_t sys_create_tee_shared_pmo(cap_t cap_group, struct tee_uuid *uuid,
                                 unsigned long size, cap_t *self_cap);
+int sys_transfer_pmo_owner(cap_t pmo, cap_t cap_group);
 #endif /* CHCORE_OH_TEE */
 
 #endif /* OBJECT_MEMORY_H */

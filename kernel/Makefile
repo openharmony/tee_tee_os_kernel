@@ -29,7 +29,7 @@ LDFLAGS =-target $(CHCORE_CROSS_COMPILE)  -no-pie -nostdlib -nostartfiles \
 
 OBJCOPY := llvm-objcopy
 
-ARCH_DIRS := backtrace irq machine mm sched sync
+ARCH_DIRS := backtrace irq machine mm sched sync trustzone
 ARCH_PATH := arch/$(CHCORE_ARCH)
 PLAT_DIRS := irq logger mm smc uart
 PLAT_PATH := arch/$(CHCORE_ARCH)/plat/$(CHCORE_PLAT)

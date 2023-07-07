@@ -99,9 +99,14 @@ s32 usys_get_affinity(cap_t thread_cap)
     return chcore_syscall1(CHCORE_SYS_get_affinity, thread_cap);
 }
 
-int usys_set_priority(cap_t thread_cap, unsigned int prio)
+int usys_get_prio(cap_t thread_cap)
 {
-    return chcore_syscall2(CHCORE_SYS_set_priority, thread_cap, prio);
+    return chcore_syscall1(CHCORE_SYS_get_prio, thread_cap);
+}
+
+int usys_set_prio(cap_t thread_cap, int prio)
+{
+    return chcore_syscall2(CHCORE_SYS_set_prio, thread_cap, prio);
 }
 
 int usys_get_phys_addr(void *vaddr, unsigned long *paddr)

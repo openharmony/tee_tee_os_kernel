@@ -9,22 +9,27 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
-#ifndef SYS_TEECALL_H
-#define SYS_TEECALL_H
+#include <common/asm.h>
+#include <arch/machine/smp.h>
 
-#include <chcore/type.h>
-#include <stdbool.h>
+.macro switch_to_cpu_stack
+	mrs     x24, TPIDR_EL1
+	add	x24, x24, #OFFSET_LOCAL_CPU_STACK
+	ldr	x24, [x24]
+	mov	sp, x24
+.endm
 
-typedef struct {
-    unsigned long params_stack[8];
-} __attribute__((packed)) kernel_shared_varibles_t;
+BEGIN_FUNC(smc_call)
+	/* switch to SMC page table (va == pa) */
+	ldr	x5, =smc_ttbr0_el1
+	ldr	x5, [x5]
+	msr 	ttbr0_el1, x5
+	isb
 
-int32_t tee_pull_kernel_variables(const kernel_shared_varibles_t *pVar);
+        smc     #0
+END_FUNC(smc_call)
 
-void tee_push_rdr_update_addr(uint64_t addr, uint32_t size, bool is_cache_mem,
-                              const char *chip_type_buff, uint32_t buff_len);
-int debug_rdr_logitem(char *str, size_t str_len);
-
-int32_t teecall_cap_time_sync(uint32_t seconds, uint32_t mills);
-
-#endif
+BEGIN_FUNC(yield_smc_entry)
+	switch_to_cpu_stack
+	b	handle_yield_smc
+END_FUNC(yield_smc_entry)

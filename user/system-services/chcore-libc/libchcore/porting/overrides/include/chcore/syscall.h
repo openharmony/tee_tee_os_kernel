@@ -28,7 +28,8 @@ int usys_tee_push_rdr_update_addr(paddr_t addr, size_t size, bool is_cache_mem,
                                   char *chip_type_buff, size_t buff_len);
 int usys_debug_rdr_logitem(char *str, size_t str_len);
 
-int usys_set_priority(cap_t thread_cap, unsigned int prio);
+int usys_get_prio(cap_t thread_cap);
+int usys_set_prio(cap_t thread_cap, int prio);
 int usys_get_pmo_paddr(cap_t pmo_cap, unsigned long *buf);
 cap_t usys_create_device_pmo(unsigned long paddr, unsigned long size);
 cap_t usys_create_pmo(unsigned long size, unsigned long type);

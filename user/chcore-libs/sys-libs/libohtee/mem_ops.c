@@ -217,7 +217,7 @@ static int __map_ns_self(uint64_t phy_addr, uint32_t size, vaddr_t *out_vaddr)
         ret = -errno;
         goto out_revoke_pmo;
     }
-    vaddr = vaddr + (phy_addr & (PAGE_SIZE - 1));
+    vaddr = (void *)((uint64_t)vaddr + (phy_addr & (PAGE_SIZE - 1)));
     *out_vaddr = (vaddr_t)vaddr;
 
     entry->pmo = pmo;

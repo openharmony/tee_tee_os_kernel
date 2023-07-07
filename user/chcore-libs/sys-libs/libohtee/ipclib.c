@@ -58,12 +58,10 @@ static ipc_struct_t *__conn_server(void)
         goto out;
     }
 
-    cis = ipc_register_client(server_cap);
-    while (!cis) {
+    do {
         cis = ipc_register_client(server_cap);
-        printf("yield!\n");
         usys_yield();
-    }
+    } while (cis == NULL);
 
 out:
     ipc_destroy_msg(ipc_msg);
@@ -541,7 +539,6 @@ int32_t ipc_get_ch_from_taskid(uint32_t taskid, int32_t ch_num, cref_t *p_ch)
     entry->cap = *p_ch;
     init_hlist_node(&entry->task2cap_node);
     htable_add(&task2cap->table, taskid, &entry->task2cap_node);
-    entry = __get_entry(taskid, ch_num);
 
     pthread_mutex_unlock(&task2cap->lock);
     return 0;
@@ -747,6 +744,9 @@ int32_t ipc_save_my_msghdl(cref_t msg_hdl)
  */
 cref_t ipc_get_my_msghdl(void)
 {
+    if (__ipc_tls.msg_hdl == 0) {
+        __ipc_tls.msg_hdl = ipc_msg_create_hdl();
+    }
     return __ipc_tls.msg_hdl;
 }
 
