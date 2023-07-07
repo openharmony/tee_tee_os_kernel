@@ -30,6 +30,7 @@
 #include <irq/irq.h>
 #ifdef CHCORE_OH_TEE
 #include <arch/trustzone/smc.h>
+#include <arch/trustzone/tlogger.h>
 #endif /* CHCORE_OH_TEE */
 #include <common/poweroff.h>
 #ifdef CHCORE_OH_TEE
@@ -66,6 +67,18 @@ void sys_putstr(char *str, size_t len)
 {
     if (check_user_addr_range((vaddr_t)str, len) != 0)
         return;
+
+    if (is_tlogger_on()) {
+        char log_buf[512];
+        if (len >= 512) {
+            return;
+        }
+        if (copy_from_user(log_buf, str, len)) {
+            return;
+        }
+        (void)append_chcore_log(log_buf, len, false);
+        return;
+    }
 
 #define PRINT_BUFSZ 64
     char buf[PRINT_BUFSZ];
@@ -163,6 +176,9 @@ const void *syscall_table[NR_SYSCALL] = {
     [SYS_putstr] = sys_putstr,
     [SYS_getc] = sys_getc,
 
+    [SYS_tee_push_rdr_update_addr] = sys_tee_push_rdr_update_addr,
+    [SYS_debug_rdr_logitem] = sys_debug_rdr_logitem,
+
     /* PMO */
     /* - single */
     [SYS_create_pmo] = sys_create_pmo,
@@ -175,6 +191,7 @@ const void *syscall_table[NR_SYSCALL] = {
     [SYS_create_ns_pmo] = sys_create_ns_pmo,
     [SYS_destroy_ns_pmo] = sys_destroy_ns_pmo,
     [SYS_create_tee_shared_pmo] = sys_create_tee_shared_pmo,
+    [SYS_transfer_pmo_owner] = sys_transfer_pmo_owner,
 #endif /* CHCORE_OH_TEE */
 
     /* - address translation */
@@ -205,7 +222,8 @@ const void *syscall_table[NR_SYSCALL] = {
     [SYS_yield] = sys_yield,
     [SYS_set_affinity] = sys_set_affinity,
     [SYS_get_affinity] = sys_get_affinity,
-    [SYS_set_priority] = sys_set_priority,
+    [SYS_set_prio] = sys_set_prio,
+    [SYS_get_prio] = sys_get_prio,
     /* IPC */
     /* - procedure call */
     [SYS_register_server] = sys_register_server,

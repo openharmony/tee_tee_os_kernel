@@ -9,22 +9,16 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
-#ifndef SYS_TEECALL_H
-#define SYS_TEECALL_H
+#pragma once
 
-#include <chcore/type.h>
-#include <stdbool.h>
+#include <common/types.h>
 
-typedef struct {
-    unsigned long params_stack[8];
-} __attribute__((packed)) kernel_shared_varibles_t;
+#define PLAT_CPU_NUM 1
 
-int32_t tee_pull_kernel_variables(const kernel_shared_varibles_t *pVar);
+void teeos_cfg_init(paddr_t start_pa);
 
-void tee_push_rdr_update_addr(uint64_t addr, uint32_t size, bool is_cache_mem,
-                              const char *chip_type_buff, uint32_t buff_len);
-int debug_rdr_logitem(char *str, size_t str_len);
+paddr_t get_tzdram_end(void);
 
-int32_t teecall_cap_time_sync(uint32_t seconds, uint32_t mills);
+paddr_t get_gicd_base(void);
 
-#endif
+paddr_t get_uart_base(void);

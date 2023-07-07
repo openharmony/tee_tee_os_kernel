@@ -92,6 +92,10 @@ static int __tee_msg_receive(struct channel *channel, void *recv_buf,
                &msg_entry->client_msg_record,
                sizeof(struct client_msg_record));
         ret = 0;
+
+        kfree(msg_entry->client_msg_record.ksend_buf);
+        kfree(msg_entry);
+
     out_unlock:
         unlock(&msg_hdl->lock);
         unlock(&channel->lock);
@@ -146,6 +150,7 @@ static int __tee_msg_send(struct channel *channel,
         server = msg_hdl->server_msg_record.server;
         client = current_thread;
 
+        current_thread = server;
         switch_thread_vmspace_to(server);
 
         copy_len = MIN(client_msg_record->send_len,
@@ -162,6 +167,7 @@ static int __tee_msg_send(struct channel *channel,
                            sizeof(struct src_msginfo));
 
     out_copy:
+        current_thread = client;
         switch_thread_vmspace_to(client);
         if (ret < 0) {
             ret = -EFAULT;
@@ -276,12 +282,14 @@ static int __tee_msg_reply(struct msg_hdl *msg_hdl, void *reply_buf,
     client = msg_hdl->client_msg_record.client;
     server = current_thread;
 
+    current_thread = client;
     switch_thread_vmspace_to(client);
 
     copy_len = MIN(reply_len, msg_hdl->client_msg_record.recv_len);
     ret =
         copy_to_user(msg_hdl->client_msg_record.recv_buf, kreply_buf, copy_len);
 
+    current_thread = server;
     switch_thread_vmspace_to(server);
     if (ret < 0) {
         ret = -EFAULT;
@@ -494,7 +502,7 @@ int sys_tee_msg_stop_channel(int channel_cap)
 
     channel = obj_get(current_cap_group, channel_cap, TYPE_CHANNEL);
     if (channel == NULL) {
-        ret = -EINVAL;
+        ret = -ECAPBILITY;
         goto out_fail_get_channel;
     }
 
@@ -564,7 +572,7 @@ int sys_tee_msg_call(int channel_cap, void *send_buf, size_t send_len,
 
     channel = obj_get(current_cap_group, channel_cap, TYPE_CHANNEL);
     if (channel == NULL) {
-        ret = -EINVAL;
+        ret = -ECAPBILITY;
         goto out_fail_get_channel;
     }
 
@@ -589,7 +597,7 @@ int sys_tee_msg_reply(int msg_hdl_cap, void *reply_buf, size_t reply_len)
 
     msg_hdl = obj_get(current_cap_group, msg_hdl_cap, TYPE_MSG_HDL);
     if (msg_hdl == NULL) {
-        ret = -EINVAL;
+        ret = -ECAPBILITY;
         goto out_fail_get_msg_hdl;
     }
 
@@ -612,7 +620,7 @@ int sys_tee_msg_notify(int channel_cap, void *send_buf, size_t send_len)
 
     channel = obj_get(current_cap_group, channel_cap, TYPE_CHANNEL);
     if (channel == NULL) {
-        ret = -EINVAL;
+        ret = -ECAPBILITY;
         goto out_fail_get_channel;
     }
 
@@ -637,10 +645,8 @@ void channel_deinit(void *ptr)
         kfree(entry->client_msg_record.ksend_buf);
         kfree(entry);
     }
-    printk("%s\n", __func__);
 }
 
 void msg_hdl_deinit(void *ptr)
 {
-    printk("%s\n", __func__);
 }

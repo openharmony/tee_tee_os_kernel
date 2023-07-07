@@ -57,7 +57,7 @@ void *recycle_routine(void *arg)
         usys_register_recycle_thread(notific_cap, (vaddr_t)recycle_msg_buffer);
     assert(ret == 0);
 
-    usys_set_priority(-1, 55);
+    usys_set_prio(-0, 2);
     sched_yield();
 
     while (1) {
@@ -72,7 +72,10 @@ void *recycle_routine(void *arg)
              * chcore_waitpid() will block until the state of
              * corresponding process is set as PROC_STATE_EXIT.
              */
+            pthread_mutex_lock(&proc_to_recycle->wait_lock);
             proc_to_recycle->state = PROC_STATE_EXIT;
+            pthread_cond_broadcast(&proc_to_recycle->wait_cv);
+            pthread_mutex_unlock(&proc_to_recycle->wait_lock);
 
             do {
                 ret = usys_cap_group_recycle(proc_to_recycle->proc_cap);

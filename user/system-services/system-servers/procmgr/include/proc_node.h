@@ -47,6 +47,8 @@ struct proc_node {
     u64 pcid; /* Used for initializing pgtbl */
     badge_t badge; /* Used for recognizing a process. */
     enum proc_state state;
+    pthread_mutex_t wait_lock;
+    pthread_cond_t wait_cv;
     int exitstatus;
 
     /* Connecters */

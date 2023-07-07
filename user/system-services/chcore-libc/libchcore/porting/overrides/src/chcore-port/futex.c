@@ -35,6 +35,30 @@
             printf("%s:%d " fmt, __FILE__, __LINE__, ##__VA_ARGS__); \
     } while (0)
 
+typedef struct {
+    volatile int lock;
+    int old_prio;
+} prio_spinlock_t;
+
+static inline void prio_spin_lock(prio_spinlock_t *lock)
+{
+    int old_prio = usys_get_prio(0);
+    if (lock->old_prio <= 55) {
+        (void)usys_set_prio(0, 55);
+    }
+    chcore_spin_lock(&lock->lock);
+    lock->old_prio = old_prio;
+}
+
+static inline void prio_spin_unlock(prio_spinlock_t *lock)
+{
+    int old_prio = lock->old_prio;
+    chcore_spin_unlock(&lock->lock);
+    if (old_prio <= 55) {
+        (void)usys_set_prio(0, old_prio);
+    }
+}
+
 /*
  * XXX: Requeue from one addr to another addr.
  *	Still use the old notifc_cap.
@@ -67,7 +91,7 @@ struct notifc_cache_entry *notifc_cache = NULL;
  * XXX: Every futex op will lock to protect notification cache
  *      and futex_entries.
  */
-int volatile futex_lock = 0;
+prio_spinlock_t futex_lock = {0};
 
 #define FUTEX_CMD_MASK ~(FUTEX_PRIVATE | FUTEX_CLOCK_REALTIME)
 
@@ -107,11 +131,11 @@ int chcore_futex_wait(int *uaddr, int futex_op, int val,
     int i, ret;
     struct notifc_cache_entry *cur_notifc_cache;
 
-    chcore_spin_lock(&futex_lock);
+    prio_spin_lock(&futex_lock);
 
     /* check if uaddr contains expected value */
     if (*uaddr != val) {
-        chcore_spin_unlock(&futex_lock);
+        prio_spin_unlock(&futex_lock);
         return -EAGAIN;
     }
 
@@ -154,7 +178,7 @@ int chcore_futex_wait(int *uaddr, int futex_op, int val,
                                  .requeued_futex_list = NULL};
     }
     printf_futex("futex wait:%d addr:%p notifc:%d\n", idx, uaddr, notifc_cap);
-    chcore_spin_unlock(&futex_lock);
+    prio_spin_unlock(&futex_lock);
 
     /* Try to wait */
     ret = chcore_syscall3(CHCORE_SYS_wait, notifc_cap, true, (long)timeout);
@@ -162,7 +186,7 @@ int chcore_futex_wait(int *uaddr, int futex_op, int val,
     assert((ret == 0) || (ret == -ETIMEDOUT));
 
     /* After wake up */
-    chcore_spin_lock(&futex_lock);
+    prio_spin_lock(&futex_lock);
     futex_entries[idx].waiter_count--;
     /*
      * If this is the last waiter: not close the notification
@@ -173,7 +197,7 @@ int chcore_futex_wait(int *uaddr, int futex_op, int val,
         cur_notifc_cache->next = notifc_cache;
         notifc_cache = cur_notifc_cache;
     }
-    chcore_spin_unlock(&futex_lock);
+    prio_spin_unlock(&futex_lock);
 
     return 0;
 }
@@ -185,7 +209,7 @@ int chcore_futex_wake(int *uaddr, int futex_op, int val)
     int i, ret;
     struct requeued_futex *requeued;
 
-    chcore_spin_lock(&futex_lock);
+    prio_spin_lock(&futex_lock);
     printf_futex("futex wake uaddr:%p val:%d\n", uaddr, val);
     /* Find waiters with the same uaddr */
     for (i = 0; i < MAX_FUTEX_ENTRIES; i++) {
@@ -229,7 +253,7 @@ int chcore_futex_wake(int *uaddr, int futex_op, int val)
     }
 
 out_unlock:
-    chcore_spin_unlock(&futex_lock);
+    prio_spin_unlock(&futex_lock);
 
     return send_count;
 }
@@ -246,7 +270,7 @@ int chcore_futex_requeue(int *uaddr, int *uaddr2, int nr_wake, int nr_requeue)
     if (uaddr == uaddr2)
         return -EINVAL;
 
-    chcore_spin_lock(&futex_lock);
+    prio_spin_lock(&futex_lock);
     for (i = 0; i < MAX_FUTEX_ENTRIES; i++) {
         if (futex_has_waiter(&futex_entries[i])
             && futex_entries[i].uaddr == uaddr) {
@@ -264,7 +288,7 @@ int chcore_futex_requeue(int *uaddr, int *uaddr2, int nr_wake, int nr_requeue)
 
     if (idx == -1) {
         printf_futex("futex requeue not found\n");
-        chcore_spin_unlock(&futex_lock);
+        prio_spin_unlock(&futex_lock);
         return -EINVAL;
     }
 
@@ -319,7 +343,7 @@ int chcore_futex_requeue(int *uaddr, int *uaddr2, int nr_wake, int nr_requeue)
         requeue_iter->next = requeue;
     }
 
-    chcore_spin_unlock(&futex_lock);
+    prio_spin_unlock(&futex_lock);
     return 0;
 }
 

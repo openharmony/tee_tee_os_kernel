@@ -174,6 +174,9 @@ struct proc_node *new_proc_node(struct proc_node *parent, char *name,
     htable_add(&pid2proc, proc->pid, &proc->pid_hash_node);
 #endif /* CHCORE_OH_TEE */
 
+    pthread_mutex_init(&proc->wait_lock, NULL);
+    pthread_cond_init(&proc->wait_cv, NULL);
+
     pthread_mutex_unlock(&proc_nodes_lock);
     debug("alloc pcid = %d\n", proc->pcid);
     return proc;

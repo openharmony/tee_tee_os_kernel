@@ -159,7 +159,7 @@ void *user_fault_handler(void *args)
     struct user_fault_msg msg;
     int ret;
 
-    usys_set_priority(-1, 55);
+    usys_set_prio(0, 55);
     sched_yield();
 
     while (1) {

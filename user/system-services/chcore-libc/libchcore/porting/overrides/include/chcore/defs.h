@@ -158,7 +158,8 @@
 #define CHCORE_SYS_yield        100
 #define CHCORE_SYS_set_affinity 101
 #define CHCORE_SYS_get_affinity 102
-#define CHCORE_SYS_set_priority 103
+#define CHCORE_SYS_set_prio     103
+#define CHCORE_SYS_get_prio     104
 
 /* IPC */
 /* - procedure call */

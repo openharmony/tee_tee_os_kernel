@@ -607,12 +607,13 @@ void update_pte(pte_t *dest, unsigned int level, struct common_pte_t *src)
         dest->l3_page.pfn = src->ppn;
         dest->l3_page.AP = __vmr_prot_to_ap(src->perm);
 
-        dest->l3_page.UXN = (src->perm & VMR_EXEC ? AARCH64_MMU_ATTR_PAGE_UX :
-                                                    AARCH64_MMU_ATTR_PAGE_UXN);
+        dest->l3_page.UXN = ((src->perm & VMR_EXEC) ?
+                                 AARCH64_MMU_ATTR_PAGE_UX :
+                                 AARCH64_MMU_ATTR_PAGE_UXN);
 
         dest->l3_page.is_valid = src->valid;
 #if !(defined(CHCORE_PLAT_RASPI3) || defined(CHCORE_PLAT_RASPI4) \
-      || defined(CHCORE_PLAT_RK3399))
+      || defined(CHCORE_PLAT_RK3399) || defined(CHCORE_PLAT_RK3568))
         /**
          * Raspberry Pi platform does not support setting AF and DBM
          * by hardware, so on these platforms we ignored them.
