@@ -35,7 +35,7 @@ tee_tee_os_kernel 部件主要包含 TEE 的内核部分，采用微内核架构
 
 ### 二、tee_tee_os_kernel 部件代码目录结构 ###
 ```
-base/tee/tee_tee_os_kernel
+base/tee/tee_os_kernel
 ├── kernel
 │   ├── arch
 │   ├── ipc
@@ -60,9 +60,9 @@ base/tee/tee_tee_os_kernel
 
 ### 三、tee_tee_os_kernel 构建指导 ###
 
-1. TEEOS内核代码位置：`base/tee/tee_tee_os_kernel`
+1. TEEOS内核代码位置：`base/tee/tee_os_kernel`
 
-2. TEEOS框架代码位置：`base/tee/tee_tee_os_framework`
+2. TEEOS框架代码位置：`base/tee/tee_os_framework`
 
 3. 切换目录至OpenHarmony源码根目录，输入以下指令进入Docker构建环境
 
@@ -73,7 +73,7 @@ docker run -it --rm -v $(pwd):$(pwd) -w $(pwd) swr.cn-south-1.myhuaweicloud.com/
 4. 输入以下指令构建杨帆开发板TEEOS
 
 ```Bash
-./build.sh --product-name yangfan --build-target tee --ccache
+./build.sh --product-name rk3568 --build-target tee --ccache
 ```
 
-5. 构建产物为TEEOS镜像：`base/tee/tee_tee_os_kernel/kernel/bl32.bin`
+5. 构建产物为TEEOS镜像：`base/tee/tee_os_kernel/kernel/bl32.bin`
