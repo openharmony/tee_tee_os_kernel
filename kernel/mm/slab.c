@@ -111,7 +111,7 @@ static struct slab_header *init_slab_cache(int order, int size)
     /* The first slot is used as metadata (struct slab_header). */
     cnt = size / obj_size - 1;
 
-    slot = (struct slab_slot_list *)(addr + obj_size);
+    slot = (struct slab_slot_list *)((unsigned long)addr + obj_size);
     slab->free_list_head = (void *)slot;
     slab->order = order;
     slab->total_free_cnt = cnt;

@@ -18,6 +18,9 @@
 #define SYS_putstr 0
 #define SYS_getc   1
 
+#define SYS_tee_push_rdr_update_addr 5
+#define SYS_debug_rdr_logitem        6
+
 /* PMO */
 /* - single */
 #define SYS_create_pmo        10
@@ -30,6 +33,7 @@
 #define SYS_create_ns_pmo         16
 #define SYS_destroy_ns_pmo        17
 #define SYS_create_tee_shared_pmo 19
+#define SYS_transfer_pmo_owner    20
 #endif /* CHCORE_OH_TEE */
 
 /* - address translation */
@@ -59,7 +63,8 @@
 #define SYS_yield        100
 #define SYS_set_affinity 101
 #define SYS_get_affinity 102
-#define SYS_set_priority 103
+#define SYS_set_prio     103
+#define SYS_get_prio     104
 
 /* IPC */
 /* - procedure call */

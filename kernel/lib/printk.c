@@ -371,9 +371,37 @@ static int simple_vsprintf(char **out, const char *format, va_list ap)
     return pc;
 }
 
+int simple_sprintf(char *str, const char *fmt, ...)
+{
+    va_list va;
+    int count;
+
+    va_start(va, fmt);
+    count = simple_vsprintf(&str, fmt, va);
+    va_end(va);
+
+    return count;
+}
+
+#define BUF_SIZE 512
+extern bool is_tlogger_on(void);
+extern int append_chcore_log(const char *str, size_t len, bool is_kernel);
+
 void printk(const char *fmt, ...)
 {
     va_list va;
+
+    if (is_tlogger_on()) {
+        char buf[BUF_SIZE];
+        int count;
+        char *ptr = buf;
+
+        va_start(va, fmt);
+        count = simple_vsprintf(&ptr, fmt, va);
+        va_end(va);
+        append_chcore_log(buf, count, true);
+        return;
+    }
 
     va_start(va, fmt);
     simple_vsprintf(NULL, fmt, va);

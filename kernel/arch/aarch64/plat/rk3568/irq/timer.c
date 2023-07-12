@@ -9,22 +9,36 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
-#ifndef SYS_TEECALL_H
-#define SYS_TEECALL_H
+#include <common/types.h>
 
-#include <chcore/type.h>
-#include <stdbool.h>
+u64 tick_per_us;
 
-typedef struct {
-    unsigned long params_stack[8];
-} __attribute__((packed)) kernel_shared_varibles_t;
+void plat_timer_init(void)
+{
+}
 
-int32_t tee_pull_kernel_variables(const kernel_shared_varibles_t *pVar);
+void plat_set_next_timer(u64 tick_delta)
+{
+}
 
-void tee_push_rdr_update_addr(uint64_t addr, uint32_t size, bool is_cache_mem,
-                              const char *chip_type_buff, uint32_t buff_len);
-int debug_rdr_logitem(char *str, size_t str_len);
+void plat_handle_timer_irq(u64 tick_delta)
+{
+}
 
-int32_t teecall_cap_time_sync(uint32_t seconds, uint32_t mills);
+void plat_disable_timer(void)
+{
+}
 
-#endif
+void plat_enable_timer(void)
+{
+}
+
+u64 plat_get_mono_time(void)
+{
+    return 0;
+}
+
+u64 plat_get_current_tick(void)
+{
+    return 0;
+}
