@@ -28,6 +28,7 @@
 #include <object/thread.h>
 #ifdef CHCORE_OH_TEE
 #include <arch/trustzone/smc.h>
+#include <arch/trustzone/tlogger.h>
 #endif /* CHCORE_OH_TEE */
 
 ALIGN(STACK_ALIGNMENT)
@@ -107,6 +108,8 @@ void main(paddr_t boot_flag, void *info)
 #ifdef CHCORE_OH_TEE
     smc_init();
     kinfo("[ChCore] SMC init finished\n");
+    tmp_tlogger_init();
+    kinfo("[ChCore] tmp tlogger init finished\n");
 #endif /* CHCORE_OH_TEE */
 
 #ifdef CHCORE_KERNEL_TEST

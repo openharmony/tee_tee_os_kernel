@@ -65,9 +65,14 @@ int getuuid(pid_t pid, spawn_uuid_t *uuid)
     return ret;
 }
 
+#define DEFAULT_STACK_SIZE 0x800000UL
+#define DEFAULT_HEAP_SIZE  0x8000000UL
+
 int spawnattr_init(posix_spawnattr_t *attr)
 {
     *attr = (posix_spawnattr_t){0};
+    attr->stack_size = DEFAULT_STACK_SIZE;
+    attr->heap_size = DEFAULT_HEAP_SIZE;
     return 0;
 }
 
@@ -105,6 +110,7 @@ int posix_spawn_ex(pid_t *pid, const char *path,
                    const posix_spawnattr_t *attrp, char **argv, char **envp,
                    int *tid)
 {
+    int ret;
     int argc = 0;
 
     if (argv != NULL) {
@@ -113,8 +119,14 @@ int posix_spawn_ex(pid_t *pid, const char *path,
         }
     }
 
-    *pid = chcore_new_process_spawn(argc, argv, envp, attrp, tid, path);
-    return 0;
+    ret = chcore_new_process_spawn(argc, argv, envp, attrp, tid, path);
+    if (ret >= 0) {
+        if (pid != NULL) {
+            *pid = ret;
+        }
+        ret = 0;
+    }
+    return ret;
 }
 
 size_t getstacksize(void)

@@ -84,7 +84,8 @@ cap_t sys_create_thread(unsigned long thread_args_p);
 void sys_thread_exit(void);
 int sys_set_affinity(cap_t thread_cap, s32 aff);
 s32 sys_get_affinity(cap_t thread_cap);
-int sys_set_priority(cap_t thread_cap, unsigned int prio);
+int sys_set_prio(cap_t thread_cap, int prio);
+int sys_get_prio(cap_t thread_cap);
 
 #ifdef CHCORE_OH_TEE
 cap_t sys_get_thread_id(cap_t thread_cap);

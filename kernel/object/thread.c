@@ -490,38 +490,6 @@ int sys_get_affinity(cap_t thread_cap)
     return aff;
 }
 
-/* Used for TrustZone only */
-int sys_set_priority(cap_t thread_cap, unsigned int prio)
-{
-    int ret = 0;
-    struct thread *thread;
-
-    if (prio >= MAX_PRIO) {
-        ret = -EINVAL;
-        goto out;
-    }
-
-    /* XXX: currently, we use -1 to represent the current thread */
-    if (thread_cap == -1) {
-        thread = current_thread;
-        BUG_ON(!thread);
-    } else {
-        thread = obj_get(current_cap_group, thread_cap, TYPE_THREAD);
-    }
-
-    if (!thread) {
-        ret = -ECAPBILITY;
-        goto out;
-    }
-
-    thread->thread_ctx->sc->prio = prio;
-
-    if (thread_cap != -1) {
-        obj_put(thread);
-    }
-out:
-    return ret;
-}
 #ifdef CHCORE_OH_TEE
 cap_t sys_get_thread_id(cap_t thread_cap)
 {
@@ -596,4 +564,27 @@ void sys_disable_local_irq(void)
 void sys_enable_local_irq(void)
 {
     current_thread->thread_ctx->ec.reg[SPSR_EL1] &= (~(SPSR_EL1_FIQ));
+}
+
+int sys_set_prio(cap_t thread_cap, int prio)
+{
+    /* Only support the thread itself */
+    if (thread_cap != 0)
+        return -EINVAL;
+    /* Need to limit setting arbitrary priority */
+    if (prio <= 0 || prio > MAX_PRIO)
+        return -EINVAL;
+
+    current_thread->thread_ctx->sc->prio = prio;
+
+    return 0;
+}
+
+int sys_get_prio(cap_t thread_cap)
+{
+    /* Only support the thread itself */
+    if (thread_cap != 0)
+        return -EINVAL;
+
+    return current_thread->thread_ctx->sc->prio;
 }

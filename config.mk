@@ -12,7 +12,7 @@
 STR_CONFIGS = \
 CHCORE_COMPILER=clang \
 CHCORE_CROSS_COMPILE=aarch64-linux-ohos- \
-CHCORE_PLAT=rk3399 \
+CHCORE_PLAT=rk3568 \
 CHCORE_ARCH=aarch64
 
 # bool config

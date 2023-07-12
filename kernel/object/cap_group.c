@@ -90,6 +90,12 @@ int cap_group_init(struct cap_group *cap_group, unsigned int size,
     /* Set badge of the new cap group. */
     cap_group->badge = badge;
 
+#ifdef CHCORE_OH_TEE
+    lock_init(&cap_group->heap_size_lock);
+    cap_group->heap_size_limit = (size_t)-1;
+    cap_group->heap_size_used = 0;
+#endif /* CHCORE_OH_TEE */
+
     return 0;
 }
 
@@ -259,6 +265,7 @@ struct cap_group_args {
 #ifdef CHCORE_OH_TEE
     int pid;
     vaddr_t puuid;
+    unsigned long heap_size;
 #endif /* CHCORE_OH_TEE */
 };
 
@@ -301,6 +308,7 @@ cap_t sys_create_cap_group(unsigned long cap_group_args_p)
     }
     cap_group_init(new_cap_group, BASE_OBJECT_NUM, args.badge);
 #ifdef CHCORE_OH_TEE
+    new_cap_group->heap_size_limit = args.heap_size;
     /* pid used in OH-TEE */
     new_cap_group->pid = args.pid;
     if (args.puuid) {

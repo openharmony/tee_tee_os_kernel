@@ -25,6 +25,18 @@ struct smc_percpu_struct {
     struct smc_registers *regs_u;
 } smc_percpu_structs[PLAT_CPU_NUM];
 
+paddr_t smc_ttbr0_el1;
+
+#define SMC_ASID 1000UL
+static void init_smc_page_table(void)
+{
+    extern ptp_t boot_ttbr0_l0;
+
+    /* Reuse the boot stage low memory page table */
+    smc_ttbr0_el1 = (paddr_t)&boot_ttbr0_l0;
+    smc_ttbr0_el1 |= SMC_ASID << 48;
+}
+
 void smc_init(void)
 {
     u32 cpuid;
@@ -35,6 +47,8 @@ void smc_init(void)
         percpu->pending_req = false;
         percpu->waiting_thread = NULL;
     }
+
+    init_smc_page_table();
 }
 
 static kernel_shared_varibles_t kernel_var;
@@ -46,6 +60,11 @@ void handle_yield_smc(unsigned long x0, unsigned long x1, unsigned long x2,
     struct smc_percpu_struct *percpu;
 
     enable_tlogger();
+
+    kinfo("%s x: [%lx %lx %lx %lx %lx]\n", __func__, x0, x1, x2, x3, x4);
+
+    /* Switch from SMC page table to process page table */
+    switch_vmspace_to(current_thread->vmspace);
 
     if (x2 == 0xf) {
         kernel_var.params_stack[0] = x0;
@@ -119,7 +138,6 @@ int sys_tee_switch_req(struct smc_registers *regs_u)
     struct smc_registers regs_k;
 
     ret = copy_from_user((char *)&regs_k, (char *)regs_u, sizeof(regs_k));
-    kinfo("%s %d\n", __func__, __LINE__);
     if (ret < 0) {
         return ret;
     }

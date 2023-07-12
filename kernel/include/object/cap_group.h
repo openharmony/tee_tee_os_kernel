@@ -80,6 +80,9 @@ struct cap_group {
     /* Used in OH-TEE */
     int pid;
     TEE_UUID uuid;
+    struct lock heap_size_lock;
+    size_t heap_size_limit;
+    size_t heap_size_used;
 #endif /* CHCORE_OH_TEE */
 };
 

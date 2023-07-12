@@ -15,5 +15,5 @@
 #include <priorities.h>
 int32_t set_priority(unsigned int prio)
 {
-    return usys_set_priority(-1, prio);
+    return usys_set_prio(0, prio);
 }
