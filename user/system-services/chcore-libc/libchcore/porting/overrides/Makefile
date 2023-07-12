@@ -18,7 +18,7 @@ libdir = $(prefix)/lib
 syslibdir = /lib
 
 ohrootdir = ../..
-teekerneldir = $(ohrootdir)/base/tee/tee_tee_os_kernel
+teekerneldir = $(ohrootdir)/base/tee/tee_os_kernel
 
 MALLOC_DIR = mallocng
 SRC_DIRS = $(addprefix $(srcdir)/,src/* src/malloc/$(MALLOC_DIR) crt ldso $(COMPAT_SRC_DIRS))

@@ -9,7 +9,7 @@
 # See the Mulan PSL v2 for more details.
 
 CHCORE_DIR=$(pwd)
-OH_TEE_FRAMEWORK_DIR=${CHCORE_DIR}/../tee_tee_os_framework/
+OH_TEE_FRAMEWORK_DIR=${CHCORE_DIR}/../tee_os_framework/
 OH_TEE_PREBUILD_DIR=${OH_TEE_FRAMEWORK_DIR}/prebuild/
 OH_TEE_HEADERS_DIR=${OH_TEE_PREBUILD_DIR}/tee-kernel-local-release/headers/
 OH_TEE_LIBS_DIR=${OH_TEE_PREBUILD_DIR}/tee-kernel-local-release/libs/aarch64
@@ -46,6 +46,7 @@ cp ${CHCORE_DIR}/user/chcore-libs/sys-libs/libohtee/include/* ${OH_TEE_HEADERS_D
 
 # go to framework and build it
 cd ${OH_TEE_FRAMEWORK_DIR}/build
+./clean_framework.sh
 ./build_framework.sh oh_64 ${CHCORE_DIR}/oh_tee /home/tools/llvm/ 10.0.1
 
 # clean chcore
