@@ -35,7 +35,7 @@ The tee_tee_os_kernel component mainly contains the kernel part of TEE, which is
 
 ### 2. tee_tee_os_kernel code directories ###
 ```
-base/tee/tee_tee_os_kernel
+base/tee/tee_os_kernel
 ├── kernel
 │   ├── arch
 │   ├── ipc
@@ -60,9 +60,9 @@ base/tee/tee_tee_os_kernel
 
 ### 3. tee_tee_os_kernel building guide ###
 
-1. TEEOS kernel code location: `base/tee/tee_tee_os_kernel`
+1. TEEOS kernel code location: `base/tee/tee_os_kernel`
  
-2. TEEOS framework code location: `base/tee/tee_tee_os_framework`
+2. TEEOS framework code location: `base/tee/tee_os_framework`
 
 3. Change the directory to the root directory of the OpenHarmony source code, and enter the following command to enter the Docker building environment:
 
@@ -73,7 +73,7 @@ docker run -it --rm -v $(pwd):$(pwd) -w $(pwd) swr.cn-south-1.myhuaweicloud.com/
 4. Enter the following command to build TEEOS for the Yangfan board:
 
 ```Bash
-./build.sh --product-name yangfan --build-target tee --ccache
+./build.sh --product-name rk3568 --build-target tee --ccache
 ```
 
-5. The product is the TEEOS image: `base/tee/tee_tee_os_kernel/kernel/bl32.bin`
+5. The product is the TEEOS image: `base/tee/tee_os_kernel/kernel/bl32.bin`
