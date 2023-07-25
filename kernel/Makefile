@@ -20,6 +20,7 @@ CFLAGS = -target $(CHCORE_CROSS_COMPILE) -Wall -Wno-initializer-overrides -Wno-a
 		 -fno-pic -fno-pie -mcmodel=large -O3
 CFLAGS += -Iinclude -Iinclude/arch/${CHCORE_ARCH} \
 		  -Iinclude/arch/${CHCORE_ARCH}/plat/${CHCORE_PLAT} \
+		  -Iinclude/arch/${CHCORE_ARCH}/arch/trustzone/spd/${CHCORE_SPD} \
 		  -Iarch/${CHCORE_ARCH}/boot/${CHCORE_PLAT}/include
 CFLAGS += $(CONFIG_FLAGS)
 CFLAGS += -DLOG_LEVEL=1
@@ -31,11 +32,13 @@ OBJCOPY := llvm-objcopy
 
 ARCH_DIRS := backtrace irq machine mm sched sync trustzone
 ARCH_PATH := arch/$(CHCORE_ARCH)
-PLAT_DIRS := irq logger mm smc uart
+PLAT_DIRS := irq mm uart
 PLAT_PATH := arch/$(CHCORE_ARCH)/plat/$(CHCORE_PLAT)
+SPD_PATH := arch/$(CHCORE_ARCH)/trustzone/spd/$(CHCORE_SPD)
 DIRS := ipc irq lib mm object sched syscall \
 		$(ARCH_PATH) $(addprefix $(ARCH_PATH)/,$(ARCH_DIRS)) \
-		$(PLAT_PATH) $(addprefix $(PLAT_PATH)/,$(PLAT_DIRS))
+		$(PLAT_PATH) $(addprefix $(PLAT_PATH)/,$(PLAT_DIRS)) \
+		$(SPD_PATH)
 C_SRCS := $(foreach dir,$(DIRS),$(wildcard $(dir)/*.c))
 C_OBJS := $(C_SRCS:%.c=%.c.o)
 ASM_SRCS += $(foreach dir,$(DIRS),$(wildcard $(dir)/*.S))

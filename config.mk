@@ -13,7 +13,8 @@ STR_CONFIGS = \
 CHCORE_COMPILER=clang \
 CHCORE_CROSS_COMPILE=aarch64-linux-ohos- \
 CHCORE_PLAT=rk3568 \
-CHCORE_ARCH=aarch64
+CHCORE_ARCH=aarch64 \
+CHCORE_SPD=opteed
 
 # bool config
 BOOL_CONFIGS = \
@@ -45,4 +46,5 @@ $(foreach CONFIG,$(BOOL_CONFIGS), \
 		)
 CONFIG_FLAGS += -DCHCORE_ARCH_$(shell echo $(CHCORE_ARCH) | tr '[:lower:]' '[:upper:]')
 CONFIG_FLAGS += -DCHCORE_PLAT_$(shell echo $(CHCORE_PLAT) | tr '[:lower:]' '[:upper:]')
+CONFIG_FLAGS += -DCHCORE_SPD_$(shell echo $(CHCORE_SPD) | tr '[:lower:]' '[:upper:]')
 CONFIG_FLAGS += -DCHCORE
