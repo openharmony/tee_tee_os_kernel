@@ -47,11 +47,6 @@ void init_boot_page_table(void)
                                                  | SECURE | INNER_SHARABLE
                                                  | NORMAL | IS_VALID;
 
-    /* Blindly map 3~4G as device memory */
-    vaddr = paddr = 3 * (1UL << L1_INDEX_SHIFT);
-    boot_ttbr0_l1.ent[GET_L1_INDEX(vaddr)].pte = paddr | UXN | ACCESSED | NG
-                                                 | DEVICE | SECURE | IS_VALID;
-
     /* TTBR1_EL1: High memory */
     vaddr = phys_to_virt(0);
     boot_ttbr1_l0.ent[GET_L0_INDEX(vaddr)].pte = (paddr_t)&boot_ttbr1_l1
