@@ -174,6 +174,7 @@ static int __tee_msg_send(struct channel *channel,
             goto out_unlock;
         }
 
+        kfree(client_msg_record->ksend_buf);
         arch_set_thread_return(server, 0);
         server->thread_ctx->state = TS_INTER;
         BUG_ON(sched_enqueue(server));

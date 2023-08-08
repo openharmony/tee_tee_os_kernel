@@ -39,6 +39,8 @@ struct pmo_node {
     cap_t cap;
     vaddr_t va;
     size_t pmo_size;
+    int type;
+    ipc_struct_t *_fs_ipc_struct;
     struct list_head list_node;
     struct hlist_node hash_node;
 };
