@@ -62,6 +62,7 @@ enum fs_req_type {
 
 #ifdef CHCORE_ENABLE_FMAP
     FS_REQ_FMAP, /* The first phase of mmap. */
+    FS_REQ_FUNMAP,
 #endif
 
     FS_REQ_MOUNT,
@@ -192,6 +193,10 @@ struct fs_request {
             int fd;
             off_t offset;
         } mmap;
+        struct {
+            void *addr;
+            size_t length;
+        } munmap;
 #endif
         struct {
             int fd;

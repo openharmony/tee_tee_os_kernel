@@ -114,6 +114,8 @@ ssize_t default_ssize_t_server_operation(ipc_msg_t *ipc_msg,
 #define default_fmap_get_page_addr NULL
 int fs_wrapper_fmap(badge_t client_badge, ipc_msg_t *ipc_msg,
                     struct fs_request *fr, bool *ret_with_cap);
+int fs_wrapper_funmap(badge_t client_badge, ipc_msg_t *ipc_msg,
+                      struct fs_request *fr);
 #endif
 int fs_wrapper_open(badge_t client_badge, ipc_msg_t *ipc_msg,
                     struct fs_request *fr);

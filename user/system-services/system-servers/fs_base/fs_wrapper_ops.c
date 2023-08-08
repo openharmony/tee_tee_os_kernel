@@ -841,6 +841,12 @@ out_fail:
     *ret_with_cap = false;
     return ret;
 }
+
+int fs_wrapper_funmap(badge_t client_badge, ipc_msg_t *ipc_msg,
+                      struct fs_request *fr)
+{
+    return fmap_area_remove(client_badge, (vaddr_t)fr->munmap.addr, fr->munmap.length);
+}
 #endif
 
 int fs_wrapper_creat(ipc_msg_t *ipc_msg, struct fs_request *fr)
