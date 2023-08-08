@@ -709,8 +709,15 @@ unsigned long sys_handle_brk(unsigned long addr, unsigned long heap_start)
         if (addr >= retval) {
             /* enlarge the heap vmr and pmo */
             len = addr - retval;
-            adjust_heap_vmr(vmspace, len);
-            retval = addr;
+            lock(&current_cap_group->heap_size_lock);
+            if (current_cap_group->heap_size_used + len > current_cap_group->heap_size_limit) {
+                retval = -ENOMEM;
+            } else {
+                current_cap_group->heap_size_used += len;
+                adjust_heap_vmr(vmspace, len);
+                retval = addr;
+            }
+            unlock(&current_cap_group->heap_size_lock);
         } else {
             kwarn("VM: ignore shrinking the heap.\n");
         }

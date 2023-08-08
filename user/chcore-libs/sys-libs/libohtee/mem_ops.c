@@ -392,6 +392,7 @@ void *alloc_sharemem_aux(const struct tee_uuid *uuid, uint32_t size)
     struct mem_entry *entry;
     cap_t pmo;
 
+    size = ROUND_UP(size, PAGE_SIZE);
     pthread_mutex_lock(&lock);
 
     vaddr = (vaddr_t)chcore_alloc_vaddr(size);
@@ -454,6 +455,9 @@ uint32_t free_sharemem(void *addr, uint32_t size)
 
     chcore_auto_unmap_pmo(entry->pmo, entry->vaddr, entry->size);
     ret = usys_revoke_cap(entry->pmo, false);
+    htable_del(&entry->vaddr2ent_node);
+    chcore_free_vaddr(entry->vaddr, entry->size);
+    free(entry);
 
 out:
     pthread_mutex_unlock(&lock);
