@@ -9,8 +9,7 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
-#ifndef ARCH_AARCH64_PLAT_RK3399_SMC_NUM_H
-#define ARCH_AARCH64_PLAT_RK3399_SMC_NUM_H
+#pragma once
 
 #define SMC_ENTRY_DONE        0xf2000000
 #define SMC_ON_DONE           0xf2000001
@@ -23,5 +22,3 @@
 #define SMC_SYSTEM_RESET_DONE 0xf2000009
 #define SMC_STD_REQUEST       0xb2000008
 #define SMC_STD_RESPONSE      0xb2000009
-
-#endif /* ARCH_AARCH64_PLAT_RK3399_SMC_NUM_H */
