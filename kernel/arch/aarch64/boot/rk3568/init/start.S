@@ -25,6 +25,12 @@ BEGIN_FUNC(_start)
         b       start_c
 END_FUNC(_start)
 
+BEGIN_FUNC(fast_smc_entry)
+        ldr     x0, =SMC_STD_RESPONSE
+        mov     x1, #0
+        smc     #0
+END_FUNC(fast_smc_entry)
+
 BEGIN_FUNC(cpu_on_entry)
         ldr     x0, =SMC_ON_DONE
         mov     x1, #0
@@ -69,7 +75,7 @@ END_FUNC(system_reset_entry)
 
 BEGIN_FUNC(tz_vectors)
 	b	yield_smc_entry
-	b	.
+	b	fast_smc_entry
 	b	cpu_on_entry
 	b	cpu_off_entry
 	b	cpu_resume_entry
