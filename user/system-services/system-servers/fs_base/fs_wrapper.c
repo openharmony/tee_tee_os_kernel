@@ -387,6 +387,9 @@ void fs_server_dispatch(ipc_msg_t *ipc_msg, badge_t client_badge)
     case FS_REQ_FMAP:
         ret = fs_wrapper_fmap(client_badge, ipc_msg, fr, &ret_with_cap);
         break;
+    case FS_REQ_FUNMAP:
+        ret = fs_wrapper_funmap(client_badge, ipc_msg, fr);
+        break;
 #endif
     case FS_REQ_SYNC:
         ret = fs_wrapper_sync();

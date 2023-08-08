@@ -523,6 +523,13 @@ int32_t ipc_get_ch_from_taskid(uint32_t taskid, int32_t ch_num, cref_t *p_ch)
 
     pthread_mutex_lock(&task2cap->lock);
 
+    entry = __get_entry(taskid, ch_num);
+    if (entry != NULL) {
+        *p_ch = entry->cap;
+        ret = 0;
+        goto out;
+    }
+
     entry = malloc(sizeof(*entry));
     if (entry == NULL) {
         ret = -ENOMEM;

@@ -111,7 +111,8 @@ fail_out:
     __initial_common_stack_success = false;
 }
 
-static struct pmo_node *new_pmo_node(cap_t cap, vaddr_t va, size_t length)
+static struct pmo_node *new_pmo_node(cap_t cap, vaddr_t va, size_t length,
+                                     int type, ipc_struct_t *_fs_ipc_struct)
 {
     struct pmo_node *node;
 
@@ -122,6 +123,8 @@ static struct pmo_node *new_pmo_node(cap_t cap, vaddr_t va, size_t length)
     node->cap = cap;
     node->va = va;
     node->pmo_size = length;
+    node->type = type;
+    node->_fs_ipc_struct = _fs_ipc_struct;
     init_hlist_node(&node->hash_node);
     return node;
 }
@@ -271,7 +274,7 @@ void *chcore_mmap(void *start, size_t length, int prot, int flags, int fd,
         goto err_free_addr;
     }
 
-    node = new_pmo_node(pmo_cap, (vaddr_t)map_addr, length);
+    node = new_pmo_node(pmo_cap, (vaddr_t)map_addr, length, PMO_ANONYM, NULL);
     if (node == NULL) {
         goto err_free_pmo;
     }
@@ -305,6 +308,7 @@ err_exit:
 void *chcore_fmap(void *start, size_t length, int prot, int flags, int fd,
                   off_t off)
 {
+    struct pmo_node *node;
     struct fd_record_extension *fd_ext;
     struct fs_request *fr;
     ipc_struct_t *_fs_ipc_struct;
@@ -365,6 +369,13 @@ void *chcore_fmap(void *start, size_t length, int prot, int flags, int fd,
     if (ret < 0) {
         return CHCORE_ERR_PTR(ret);
     }
+    
+    pthread_once(&init_mmap_once, initial_mmap);
+    pthread_spin_lock(&va2pmo_lock);
+    node = new_pmo_node(fmap_pmo_cap, (vaddr_t)start, length, PMO_FILE, _fs_ipc_struct);
+    htable_add(&va2pmo, VA_TO_KEY(start), &node->hash_node);
+    add_node_in_order(node);
+    pthread_spin_unlock(&va2pmo_lock);
 
     return start; /* Generated addr */
 }
@@ -378,6 +389,11 @@ int chcore_munmap(void *start, size_t length)
     vaddr_t end_addr;
     struct pmo_node *node;
     struct pmo_node *prev_node = NULL;
+    int type;
+    struct fd_record_extension *fd_ext;
+    struct fs_request *fr;
+    ipc_struct_t *_fs_ipc_struct;
+    ipc_msg_t *ipc_msg;
 
     if (((vaddr_t)start % PAGE_SIZE) || (length % PAGE_SIZE)) {
         ret = -EINVAL;
@@ -403,6 +419,8 @@ int chcore_munmap(void *start, size_t length)
         pmo_cap = node->cap;
         pmo_size = node->pmo_size;
         addr = node->va;
+        type = node->type;
+        _fs_ipc_struct = node->_fs_ipc_struct;
 
         hlist_del(&node->hash_node);
         list_del(&node->list_node);
@@ -413,6 +431,17 @@ int chcore_munmap(void *start, size_t length)
         usys_revoke_cap(pmo_cap, false);
         chcore_free_vaddr(addr, pmo_size);
         pthread_spin_unlock(&va2pmo_lock);
+
+        if (type == PMO_FILE) {
+            ipc_msg = ipc_create_msg(_fs_ipc_struct, sizeof(struct fs_request));
+            fr = (struct fs_request *)ipc_get_msg_data(ipc_msg);
+
+            fr->req = FS_REQ_FUNMAP;
+            fr->munmap.addr = (void *)addr;
+            fr->munmap.length = pmo_size;
+            ret = ipc_call(_fs_ipc_struct, ipc_msg);
+            ipc_destroy_msg(ipc_msg);
+        }
 
         addr += pmo_size;
         length = end_addr - addr;
