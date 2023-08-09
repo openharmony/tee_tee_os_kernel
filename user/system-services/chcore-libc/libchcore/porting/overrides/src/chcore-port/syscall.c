@@ -37,13 +37,13 @@ int usys_tee_push_rdr_update_addr(paddr_t addr, size_t size, bool is_cache_mem,
                            addr,
                            size,
                            is_cache_mem,
-                           chip_type_buff,
+                           (long)chip_type_buff,
                            buff_len);
 }
 
 int usys_debug_rdr_logitem(char *str, size_t str_len)
 {
-    return chcore_syscall2(CHCORE_SYS_debug_rdr_logitem, str, str_len);
+    return chcore_syscall2(CHCORE_SYS_debug_rdr_logitem, (long)str, str_len);
 }
 
 _Noreturn void usys_exit(unsigned long ret)

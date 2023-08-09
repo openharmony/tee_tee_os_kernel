@@ -1,0 +1,50 @@
+--- /home/chris/oh_patchlibc_0803/openharmony/third_party/musl/arch/generic/bits/errno.h	2023-08-07 15:19:23.150403358 +0800
++++ topatch/arch/generic/bits/errno.h	2023-08-07 16:24:49.173781279 +0800
+@@ -1,12 +1,24 @@
+-#define EPERM            1
+-#define ENOENT           2
+-#define ESRCH            3
+-#define EINTR            4
+-#define EIO              5
+-#define ENXIO            6
+-#define E2BIG            7
+-#define ENOEXEC          8
+-#define EBADF            9
++/*
++ * Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
++ * Licensed under the Mulan PSL v2.
++ * You can use this software according to the terms and conditions of the Mulan PSL v2.
++ * You may obtain a copy of Mulan PSL v2 at:
++ *     http://license.coscl.org.cn/MulanPSL2
++ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
++ * PURPOSE.
++ * See the Mulan PSL v2 for more details.
++ */
++
++#define EPERM           1
++#define ENOENT          2
++#define ESRCH           3
++#define EINTR           4
++#define EIO             5
++#define ENXIO           6
++#define E2BIG           7
++#define ENOEXEC         8
++#define EBADF           9
+ #define ECHILD          10
+ #define EAGAIN          11
+ #define ENOMEM          12
+@@ -132,3 +144,13 @@
+ #define ENOTRECOVERABLE 131
+ #define ERFKILL         132
+ #define EHWPOISON       133
++
++/* ChCore Specific */
++#define EIPCRETRY   199 /* Retry the IPC call */
++#define ECAPBILITY  200 /* Invalid capability */
++#define ESUPPORT    201 /* Not supported */
++#define EBADSYSCALL 202 /* Bad syscall number */
++#define ENOMAPPING  203 /* No memory mapping in pgtbl */
++#define ESIGBUS     204 /* Bus error */
++
++#define EMAX 205

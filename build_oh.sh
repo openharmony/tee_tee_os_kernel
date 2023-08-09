@@ -8,28 +8,36 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 
+# paths setting
 CHCORE_DIR=$(pwd)
 OH_TEE_FRAMEWORK_DIR=${CHCORE_DIR}/../tee_os_framework/
 OH_TEE_PREBUILD_DIR=${OH_TEE_FRAMEWORK_DIR}/prebuild/
 OH_TEE_HEADERS_DIR=${OH_TEE_PREBUILD_DIR}/tee-kernel-local-release/headers/
 OH_TEE_LIBS_DIR=${OH_TEE_PREBUILD_DIR}/tee-kernel-local-release/libs/aarch64
-THIRD_PARTY=${CHCORE_DIR}/../../../third_party/
+OH_TOP_DIR=${CHCORE_DIR}/../../../
+THIRD_PARTY=${OH_TOP_DIR}/third_party/
 
+# default compiler and version setting
+if [[ -z "$COMPILER_DIR" ]]; then
+    COMPILER_DIR=${OH_TOP_DIR}/prebuilts/clang/ohos/linux-x86_64/llvm/
+fi
+if [[ -z "$COMPILER_VER" ]]; then
+    COMPILER_VER=15.0.4
+fi
+
+# clean framework
+cd ${OH_TEE_FRAMEWORK_DIR}/build
+./clean_framework.sh
 
 # compile chcore
-make clean && make -j$(nproc)
-
+cd ${CHCORE_DIR}
 rm -rf oh_tee
-rm -rf ramdisk-dir
+make clean && make -j$(nproc) CHCORE_COMPILER_DIR=${COMPILER_DIR}
 
-# build bounds_checking_function
-cd ${THIRD_PARTY}/bounds_checking_function
-make CC="clang -target aarch64-linux-gnu"
+mkdir -p ramdisk-dir
+cp libc_shared.so ${CHCORE_DIR}/ramdisk-dir/libc_shared.so
 
-# link libc with bounds checking functions and libtee
-# and copy to framework
-cd ${CHCORE_DIR}/user/chcore-libc/musl-libc
-make libc_shared
+
 mkdir -p ${OH_TEE_LIBS_DIR}
 cp libc_shared.so ${OH_TEE_LIBS_DIR}/libc_shared.so
 mkdir -p ${OH_TEE_FRAMEWORK_DIR}/output/aarch64/libs/
@@ -38,7 +46,6 @@ mkdir -p ${OH_TEE_FRAMEWORK_DIR}/output/aarch64
 cp libc_shared.so ${OH_TEE_FRAMEWORK_DIR}/output/aarch64/libc_shared.so
 
 # libc and libohtee headers for framework
-cd ${CHCORE_DIR}
 mkdir -p ${OH_TEE_HEADERS_DIR}/libc
 mkdir -p ${OH_TEE_HEADERS_DIR}/sys
 cp -r ${CHCORE_DIR}/user/chcore-libc/musl-libc/install/include/* ${OH_TEE_HEADERS_DIR}/libc/
@@ -46,21 +53,11 @@ cp ${CHCORE_DIR}/user/chcore-libs/sys-libs/libohtee/include/* ${OH_TEE_HEADERS_D
 
 # go to framework and build it
 cd ${OH_TEE_FRAMEWORK_DIR}/build
-./clean_framework.sh
-./build_framework.sh oh_64 ${CHCORE_DIR}/oh_tee /home/tools/llvm/ 10.0.1
-
-# clean chcore
-cd ${CHCORE_DIR}
-make clean && mkdir -p ramdisk-dir
-
-# copy libc into ramdisk-dir
-cd ${CHCORE_DIR}
-mkdir -p ramdisk-dir
-cd ${CHCORE_DIR}/user/chcore-libc/musl-libc
-cp libc_shared.so ${CHCORE_DIR}/ramdisk-dir/libc_shared.so
-
+./build_framework.sh oh_64 ${CHCORE_DIR}/oh_tee ${COMPILER_DIR} ${COMPILER_VER}
 
 # compile again to put the apps into ramdisk-dir
 cd ${CHCORE_DIR}
+make clean
+mkdir -p ramdisk-dir
 cp oh_tee/apps/* ramdisk-dir
 make -j$(nproc)

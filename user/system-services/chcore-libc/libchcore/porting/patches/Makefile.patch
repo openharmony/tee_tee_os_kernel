@@ -1,0 +1,85 @@
+--- Makefile.bak	2023-08-08 19:28:01.774887250 +0800
++++ Makefile	2023-08-08 19:29:21.724888154 +0800
+@@ -17,6 +17,9 @@
+ libdir = $(prefix)/lib
+ syslibdir = /lib
+ 
++ohrootdir = ../../../../../../../
++teekerneldir = $(ohrootdir)/base/tee/tee_os_kernel
++
+ MALLOC_DIR = mallocng
+ SRC_DIRS = $(addprefix $(srcdir)/,src/* src/malloc/$(MALLOC_DIR) crt ldso $(COMPAT_SRC_DIRS))
+ BASE_GLOBS = $(addsuffix /*.c,$(SRC_DIRS))
+@@ -27,6 +30,9 @@
+ ARCH_OBJS = $(patsubst $(srcdir)/%,%.o,$(basename $(ARCH_SRCS)))
+ REPLACED_OBJS = $(sort $(subst /$(ARCH)/,/,$(ARCH_OBJS)))
+ ALL_OBJS = $(addprefix obj/, $(filter-out $(REPLACED_OBJS), $(sort $(BASE_OBJS) $(ARCH_OBJS))))
++BOUNDS_CHECKING_OBJS = $(wildcard $(ohrootdir)/third_party/bounds_checking_function/obj/*)
++PWD = $(pwd)
++OH_TEE_OBJS = $(wildcard $(teekerneldir)/user/chcore-libs/sys-libs/libohtee/*.c.o)
+ 
+ LIBC_OBJS = $(filter obj/src/%,$(ALL_OBJS)) $(filter obj/compat/%,$(ALL_OBJS))
+ LDSO_OBJS = $(filter obj/ldso/%,$(ALL_OBJS:%.o=%.lo))
+@@ -40,11 +46,11 @@
+ 
+ LDFLAGS =
+ LDFLAGS_AUTO =
+-LIBCC = -lgcc
++LIBCC = -lclang_rt.builtins
+ CPPFLAGS =
+ CFLAGS =
+ CFLAGS_AUTO = -Os -pipe
+-CFLAGS_C99FSE = -std=c99 -ffreestanding -nostdinc 
++CFLAGS_C99FSE = -std=c99 -ffreestanding -nostdinc
+ 
+ CFLAGS_ALL = $(CFLAGS_C99FSE)
+ CFLAGS_ALL += -D_XOPEN_SOURCE=700 -I$(srcdir)/arch/$(ARCH) -I$(srcdir)/arch/generic -Iobj/src/internal -I$(srcdir)/src/include -I$(srcdir)/src/internal -Iobj/include -I$(srcdir)/include
+@@ -58,7 +64,7 @@
+ 
+ ARCH_INCLUDES = $(wildcard $(srcdir)/arch/$(ARCH)/bits/*.h)
+ GENERIC_INCLUDES = $(wildcard $(srcdir)/arch/generic/bits/*.h)
+-INCLUDES = $(wildcard $(srcdir)/include/*.h $(srcdir)/include/*/*.h)
++INCLUDES = $(wildcard $(srcdir)/include/*.h $(srcdir)/include/*/*.h $(srcdir)/include/*/*/*.h)
+ ALL_INCLUDES = $(sort $(INCLUDES:$(srcdir)/%=%) $(GENH:obj/%=%) $(ARCH_INCLUDES:$(srcdir)/arch/$(ARCH)/%=include/%) $(GENERIC_INCLUDES:$(srcdir)/arch/generic/%=include/%))
+ 
+ EMPTY_LIB_NAMES = m rt pthread crypt util xnet resolv dl
+@@ -78,6 +84,12 @@
+ -include config.mak
+ -include $(srcdir)/arch/$(ARCH)/arch.mak
+ 
++# cross-compiling libc with clang
++ifeq (clang, $(findstring clang, $(CC)))
++	CFLAGS_ALL += -target ${TARGET}
++	LDFLAGS_ALL += -fuse-ld=lld
++endif
++
+ ifeq ($(ARCH),)
+ 
+ all:
+@@ -90,7 +102,7 @@
+ 
+ OBJ_DIRS = $(sort $(patsubst %/,%,$(dir $(ALL_LIBS) $(ALL_TOOLS) $(ALL_OBJS) $(GENH) $(GENH_INT))) obj/include)
+ 
+-$(ALL_LIBS) $(ALL_TOOLS) $(ALL_OBJS) $(ALL_OBJS:%.o=%.lo) $(GENH) $(GENH_INT): | $(OBJ_DIRS)
++$(ALL_LIBS) $(ALL_TOOLS) $(ALL_OBJS) $(:%.o=%.lo) $(GENH) $(GENH_INT): | $(OBJ_DIRS)
+ 
+ $(OBJ_DIRS):
+ 	mkdir -p $@
+@@ -184,8 +196,16 @@
+ 	printf '#!/bin/sh\nexec "$${REALGCC:-$(WRAPCC_GCC)}" "$$@" -specs "%s/musl-gcc.specs"\n' "$(libdir)" > $@
+ 	chmod +x $@
+ 
++obj/musl-ar: config.mak
++	printf '#!/bin/sh\nexec "$${REALAR:-$(AR)}"  "$$@"\n' "$(libdir)" > $@
++	chmod +x $@
++
++obj/musl-strip: config.mak
++	printf '#!/bin/sh\nexec "$${REALSTRIP:-$(CROSS_COMPILE)strip}"  "$$@"\n' "$(libdir)" > $@
++	chmod +x $@
++
+ obj/%-clang: $(srcdir)/tools/%-clang.in config.mak
+-	sed -e 's!@CC@!$(WRAPCC_CLANG)!g' -e 's!@PREFIX@!$(prefix)!g' -e 's!@INCDIR@!$(includedir)!g' -e 's!@LIBDIR@!$(libdir)!g' -e 's!@LDSO@!$(LDSO_PATHNAME)!g' $< > $@
++	sed -e 's!@CC@!$(WRAPCC_CLANG)!g' -e 's!@PREFIX@!$(prefix)!g' -e 's!@INCDIR@!$(includedir)!g' -e 's!@LIBDIR@!$(libdir)!g' -e 's!@LDSO@!$(LDSO_PATHNAME)!g' -e 's!@TARGET@!$(TARGET)!g' -e 's!@COMPILER_DIR@!$(COMPILER_DIR)!g'  $< > $@
+ 	chmod +x $@
+ 
+ $(DESTDIR)$(bindir)/%: obj/%

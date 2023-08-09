@@ -1,0 +1,21 @@
+--- /home/chris/oh_patchlibc_0803/openharmony/third_party/musl/tools/musl-clang.in	2023-08-07 15:19:23.290403360 +0800
++++ topatch/tools/musl-clang.in	2023-08-07 16:24:49.180447946 +0800
+@@ -4,6 +4,7 @@
+ libc_inc="@INCDIR@"
+ libc_lib="@LIBDIR@"
+ thisdir="`cd "$(dirname "$0")"; pwd`"
++target="@TARGET@"
+ 
+ # prevent clang from running the linker (and erroring) on no input.
+ sflags=
+@@ -21,8 +22,9 @@
+ done
+ 
+ exec $cc \
++    -target "$target" \
+     -B"$thisdir" \
+-    -fuse-ld=musl-clang \
++    -fuse-ld="$libc/bin/ld.musl-clang" \
+     -static-libgcc \
+     -nostdinc \
+     --sysroot "$libc" \
