@@ -21,8 +21,22 @@ LIBCHCORE_SCRIPTS_DIR := $(LIBCHCORE_DIR)/cmake
 LIBCHCORE_OVERRIDES_DIR := $(LIBCHCORE_DIR)/porting/overrides
 LIBCHCORE_PATCHES_DIR := $(LIBCHCORE_DIR)/porting/patches
 LIBCHCORE_ARCH_INCLUDES_DIR := $(LIBCHCORE_DIR)/arch/$(CHCORE_ARCH)
+OH_DIR := $(realpath ../../../)
+SECURE_FUNCTION_DIR := $(OH_DIR)/third_party/bounds_checking_function
+MUSL_LIBC_DIR := $(OH_DIR)/third_party/musl
+LIB_OHTEE_OBJS = $(wildcard user/chcore-libs/sys-libs/libohtee/*.c.o)
+
+ifneq ($(CHCORE_COMPILER_DIR),)
+export CHCORE_COMPILER_DIR := $(CHCORE_COMPILER_DIR)
+else
+# use clang 15.0.4 by default
+export CHCORE_COMPILER_DIR := $(OH_DIR)/prebuilts/clang/ohos/linux-x86_64/15.0.4/llvm/
+endif
 
 libc:
+	# copy musl-libc first
+	cp -r $(MUSL_LIBC_DIR) $(LIBC_DIR) 
+	ln -sf $(OH_DIR)/.repo/projects/third_party/musl.git $(LIBC_DIR)/.git
 	$(Q)bash $(LIBCHCORE_SCRIPTS_DIR)/do_override_dir.sh $(LIBCHCORE_OVERRIDES_DIR) $(LIBC_DIR) \
 	&& bash $(LIBCHCORE_SCRIPTS_DIR)/do_patch_dir.sh $(LIBCHCORE_PATCHES_DIR) $(LIBC_DIR) \
 	&& cd $(LIBC_DIR) \
@@ -30,8 +44,9 @@ libc:
 		--syslibdir=$(LIBC_DIR)/lib \
 		--target=$(CHCORE_CROSS_COMPILE) \
 		--with-malloc=oldmalloc \
-		COMPILER=$(CHCORE_COMPILER) \
-		CROSS_COMPILE=llvm- \
+		COMPILER_DIR=$(CHCORE_COMPILER_DIR) \
+		COMPILER=$(CHCORE_COMPILER_DIR)/bin/$(CHCORE_COMPILER) \
+		CROSS_COMPILE=$(CHCORE_COMPILER_DIR)/bin/llvm- \
 		CFLAGS="$(CONFIG_FLAGS) -I$(LIBCHCORE_ARCH_INCLUDES_DIR)" \
 	&& make -j$(shell nproc) > /dev/null \
 	&& make install
@@ -39,11 +54,67 @@ libc:
 # common flags for userspace targets (libs, system servers and apps)
 override CC := $(LIBC_DIR)/install/bin/musl-clang
 override AR := $(LIBC_DIR)/install/bin/musl-ar
-override OBJCOPY := llvm-objcopy
-override OBJDUMP := llvm-objdump
-override RANLIB := llvm-ranlib
+override OBJCOPY := $(CHCORE_COMPILER_DIR)/bin/llvm-objcopy
+override OBJDUMP := $(CHCORE_COMPILER_DIR)/bin/llvm-objdump
+override RANLIB := $(CHCORE_COMPILER_DIR)/bin/llvm-ranlib
 override DEFAULT_CFLAGS = -Wall -O3 $(CONFIG_FLAGS) \
 	-I$(realpath user/chcore-libs/sys-libs/libohtee/include)
+
+# bounds checking function
+SECURE_FUNCTION_OPTION = -fPIC -fstack-protector-all -Wformat=2 \
+			 -Wfloat-equal -Wshadow -Wconversion \
+			 -Wformat-security -Wextra \
+			 --param ssp-buffer-size=4 -Warray-bounds \
+			 -Wpointer-arith -Wcast-qual -Wstrict-prototypes \
+			 -Wstrict-overflow=1 -Wstrict-aliasing=2 \
+			 -Wswitch -Wswitch-default -Wmissing-prototypes \
+			 -I$(SECURE_FUNCTION_DIR)/include \
+			 -I$(SECURE_FUNCTION_SOURCE_DIR)
+
+SECURE_FUNCTION_CFLAG = -Wall -DNDEBUG -O2 $(SECURE_FUNCTION_OPTION)
+
+SECURE_FUNCTION_SOURCE_DIR=$(SECURE_FUNCTION_DIR)/src/
+SECURE_FUNCTION_SOURCES=$(patsubst $(SECURE_FUNCTION_SOURCE_DIR)/%,%,$(wildcard $(SECURE_FUNCTION_SOURCE_DIR)/*.c))
+SECURE_FUNCTION_OBJ_DIR := secure_obj
+SECURE_FUNCTION_OBJS := $(patsubst %.c,$(SECURE_FUNCTION_OBJ_DIR)/%.o,$(SECURE_FUNCTION_SOURCES))
+
+$(SECURE_FUNCTION_OBJ_DIR)/%.o: $(SECURE_FUNCTION_SOURCE_DIR)/%.c
+	$(CHCORE_COMPILER_DIR)/bin/$(CHCORE_COMPILER) --target=aarch64-linux-gnu $(SECURE_FUNCTION_CFLAG) -c $< -o $@
+
+$(SECURE_FUNCTION_OBJ_DIR):
+	mkdir -p $(SECURE_FUNCTION_OBJ_DIR)
+
+
+
+# link things together: musl-libc, libohtee and secure function
+srcdir = user/chcore-libc/musl-libc
+
+MALLOC_DIR = oldmalloc
+ARCH = aarch64
+SRC_DIRS = $(addprefix $(srcdir)/,src/* src/malloc/$(MALLOC_DIR) crt ldso)
+BASE_GLOBS = $(addsuffix /*.c,$(SRC_DIRS))
+ARCH_GLOBS = $(addsuffix /$(ARCH)/*.[csS],$(SRC_DIRS))
+BASE_SRCS = $(sort $(wildcard $(BASE_GLOBS)))
+ARCH_SRCS = $(sort $(wildcard $(ARCH_GLOBS)))
+BASE_OBJS = $(patsubst $(srcdir)/%,%.o,$(basename $(BASE_SRCS)))
+ARCH_OBJS = $(patsubst $(srcdir)/%,%.o,$(basename $(ARCH_SRCS)))
+REPLACED_OBJS = $(sort $(subst /$(ARCH)/,/,$(ARCH_OBJS)))
+OBJS = $(addprefix obj/, $(filter-out $(REPLACED_OBJS), $(sort $(BASE_OBJS) $(ARCH_OBJS))))
+
+ALL_OBJS = $(addprefix $(srcdir)/,$(OBJS))
+LIBC_OBJS = $(filter $(srcdir)/obj/src/%,$(ALL_OBJS)) $(filter $(srcdir)/obj/compat/%,$(ALL_OBJS))
+LDSO_OBJS = $(filter $(srcdir)/obj/ldso/%,$(ALL_OBJS:%.o=%.lo))
+CRT_OBJS = $(filter $(srcdir)/obj/crt/%,$(ALL_OBJS))
+
+AOBJS = $(LIBC_OBJS)
+LOBJS = $(LIBC_OBJS:.o=.lo)
+CFLAGS_ALL = -std=c99 -ffreestanding -nostdinc -D_XOPEN_SOURCE=700 -Os -pipe
+libc_shared: libc libohtee.so $(SECURE_FUNCTION_OBJ_DIR) $(SECURE_FUNCTION_OBJS) 
+	${CHCORE_COMPILER_DIR}/bin/${CHCORE_COMPILER} --target=aarch64-linux-gnu -fuse-ld=lld $(CFLAGS_ALL) -nostdlib -shared \
+	-Wl,-e,_dlstart -o libc_shared.so $(LOBJS) $(LDSO_OBJS) -L${CHCORE_COMPILER_DIR}/lib/clang/current/lib/aarch64-linux-ohos/ -lclang_rt.builtins $(SECURE_FUNCTION_OBJS) $(LIB_OHTEE_OBJS) 
+	$(shell mkdir -p ramdisk-dir)
+	$(Q)cp libc_shared.so ramdisk-dir
+
 
 # flags for libs
 # shared and static compile flags
@@ -100,7 +171,7 @@ ramdisk: libohtee.so chanmgr.srv
 	$(shell mkdir -p ramdisk-dir)
 	$(Q)cp $(foreach target,$^,$(call target_dir,$(target))/$(target)) ramdisk-dir
 
-tmpfs.srv: ramdisk libfs_base.a
+tmpfs.srv: ramdisk libfs_base.a libc_shared
 procmgr: fsm.srv tmpfs.srv
 
 # make all targets
@@ -113,8 +184,8 @@ KERNEL_MAKE_PARAM := PROCMGR=$(SERVER_DIR)/procmgr/procmgr \
 					 Q=$(Q)
 
 .PHONY: kernel
-kernel: procmgr
-	$(Q)make $(KERNEL_MAKE_PARAM) -C kernel
+kernel: procmgr libc_shared
+	$(Q)make $(KERNEL_MAKE_PARAM) -C kernel CC=$(CHCORE_COMPILER_DIR)/bin/$(CHCORE_COMPILER)
 
 # related to clean
 clean-user-%:
@@ -123,6 +194,6 @@ clean-user-%:
 clean: $(addprefix clean-user-,$(USER_TARGETS))
 	$(Q)rm -rf ramdisk-dir
 	$(Q)make $(KERNEL_MAKE_PARAM) -C kernel clean
-	$(Q)rm -rf $(LIBC_DIR)/install
-	$(Q)make -C $(LIBC_DIR) clean
-
+	$(Q)rm -rf $(LIBC_DIR)
+	$(Q)rm -rf $(SECURE_FUNCTION_OBJ_DIR)
+	$(Q)rm -f libc_shared.so

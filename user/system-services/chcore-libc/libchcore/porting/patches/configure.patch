@@ -1,0 +1,106 @@
+--- user/system-services/chcore-libc/musl-libc/configure	2023-08-08 15:48:14.588070621 +0800
++++ user/system-services/chcore-libc/libchcore/porting/overrides/configure	2023-08-08 15:45:49.611402313 +0800
+@@ -1,4 +1,13 @@
+ #!/bin/sh
++# Copyright (c) 2023 Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)
++# Licensed under the Mulan PSL v2.
++# You can use this software according to the terms and conditions of the Mulan PSL v2.
++# You may obtain a copy of Mulan PSL v2 at:
++#     http://license.coscl.org.cn/MulanPSL2
++# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR
++# IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY OR FIT FOR A PARTICULAR
++# PURPOSE.
++# See the Mulan PSL v2 for more details.
+ 
+ usage () {
+ cat <<EOF
+@@ -43,6 +52,8 @@
+   CFLAGS                  C compiler flags [-Os -pipe ...]
+   CROSS_COMPILE           prefix for cross compiler and tools [none]
+   LIBCC                   compiler runtime library [detected]
++  LIBCHCORE_A             path to libchcore-abi.a
++  LIBCHCORE_INCLUDE       path to the include directory of libchcore-abi
+ 
+ Use these variables to override the choices made by configure.
+ 
+@@ -181,9 +192,13 @@
+ RANLIB=*) RANLIB=${arg#*=} ;;
+ CC=*) CC=${arg#*=} ;;
+ CFLAGS=*) CFLAGS=${arg#*=} ;;
++LIBCHCORE_A=*) LIBCHCORE_A=${arg#*=} ;;
++LIBCHCORE_INCLUDE=*) LIBCHCORE_INCLUDE=${arg#*=} ;;
+ CPPFLAGS=*) CPPFLAGS=${arg#*=} ;;
+ LDFLAGS=*) LDFLAGS=${arg#*=} ;;
+ CROSS_COMPILE=*) CROSS_COMPILE=${arg#*=} ;;
++COMPILER_DIR=*) COMPILER_DIR=${arg#*=} ;;
++COMPILER=*) COMPILER=${arg#*=} ;;
+ LIBCC=*) LIBCC=${arg#*=} ;;
+ *=*) ;;
+ *) build=$arg ; target=$arg ;;
+@@ -238,9 +253,7 @@
+ # Find a C compiler to use
+ #
+ printf "checking for C compiler... "
+-trycc ${CROSS_COMPILE}gcc
+-trycc ${CROSS_COMPILE}c99
+-trycc ${CROSS_COMPILE}cc
++trycc ${COMPILER}
+ printf "%s\n" "$CC"
+ test -n "$CC" || { echo "$0: cannot find a C compiler" ; exit 1 ; }
+ 
+@@ -308,6 +321,7 @@
+ if test "$clang_wrapper" = yes ; then
+ tools="$tools obj/musl-clang obj/ld.musl-clang"
+ fi
++tools="$tools obj/musl-ar obj/musl-strip"
+ 
+ #
+ # Find the target architecture
+@@ -338,6 +352,7 @@
+ riscv64*) ARCH=riscv64 ;;
+ sh[1-9bel-]*|sh|superh*) ARCH=sh ;;
+ s390x*) ARCH=s390x ;;
++sparc*) ARCH=sparc ;;
+ unknown) fail "$0: unable to detect target arch; try $0 --target=..." ;;
+ *) fail "$0: unknown or unsupported target \"$target\"" ;;
+ esac
+@@ -592,12 +607,13 @@
+ tryldflag LDFLAGS_AUTO -Wl,--dynamic-list="$srcdir/dynamic.list"
+ 
+ # Find compiler runtime library
+-test -z "$LIBCC" && tryldflag LIBCC -lgcc && tryldflag LIBCC -lgcc_eh
+-test -z "$LIBCC" && tryldflag LIBCC -lcompiler_rt
+-test -z "$LIBCC" && try_libcc=`$CC -print-libgcc-file-name 2>/dev/null` \
+-                 && tryldflag LIBCC "$try_libcc"
+-test -z "$LIBCC" && try_libcc=`$CC -print-file-name=libpcc.a 2>/dev/null` \
+-                 && tryldflag LIBCC "$try_libcc"
++# test -z "$LIBCC" && tryldflag LIBCC -lgcc && tryldflag LIBCC -lgcc_eh
++# test -z "$LIBCC" && tryldflag LIBCC -lcompiler_rt
++# test -z "$LIBCC" && try_libcc=`$CC -print-libgcc-file-name 2>/dev/null` \
++#                  && tryldflag LIBCC "$try_libcc"
++# test -z "$LIBCC" && try_libcc=`$CC -print-file-name=libpcc.a 2>/dev/null` \
++#                  && tryldflag LIBCC "$try_libcc"
++LIBCC="-lclang_rt.builtins"
+ printf "using compiler runtime libraries: %s\n" "$LIBCC"
+ 
+ # Figure out arch variants for archs with variants
+@@ -790,15 +806,19 @@
+ CFLAGS_MEMOPS = $CFLAGS_MEMOPS
+ CFLAGS_NOSSP = $CFLAGS_NOSSP
+ CPPFLAGS = $CPPFLAGS
++LIBCHCORE_A = $LIBCHCORE_A
++LIBCHCORE_INCLUDE = $LIBCHCORE_INCLUDE
+ LDFLAGS = $LDFLAGS
+ LDFLAGS_AUTO = $LDFLAGS_AUTO
+ CROSS_COMPILE = $CROSS_COMPILE
++COMPILER_DIR = $COMPILER_DIR
+ LIBCC = $LIBCC
+ OPTIMIZE_GLOBS = $OPTIMIZE_GLOBS
+ ALL_TOOLS = $tools
+ TOOL_LIBS = $tool_libs
+ ADD_CFI = $ADD_CFI
+ MALLOC_DIR = $malloc_dir
++TARGET = $target # So the target arch will be visible to Makefile
+ EOF
+ test "x$static" = xno && echo "STATIC_LIBS ="
+ test "x$shared" = xno && echo "SHARED_LIBS ="
