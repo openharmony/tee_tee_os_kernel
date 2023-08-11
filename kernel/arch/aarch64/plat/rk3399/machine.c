@@ -44,14 +44,7 @@ struct platform_info {
     u64 phys_region_size;
     u64 phys_region_start;
     u64 uart_addr;
-    u64 uart_type;
-    p_region_t protected_regions[MAX_PROTECTED_REGIONS];
-    u64 reserved;
-    u64 shmem_size;
-    u32 random_seed;
     struct gic_config_t gic_config;
-    u32 spi_num_for_notify;
-    u64 plat_features;
     struct extend_datas_t {
         u64 extend_length;
         char extend_paras[0];
