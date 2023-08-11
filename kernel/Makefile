@@ -47,7 +47,8 @@ ASM_OBJS := $(ASM_SRCS:%.S=%.S.o)
 
 INIT_C_SRCS := $(wildcard arch/$(CHCORE_ARCH)/boot/$(CHCORE_PLAT)/init/*.c)
 INIT_C_OBJS := $(INIT_C_SRCS:%.c=%.c.o)
-INIT_ASM_SRCS := $(wildcard arch/$(CHCORE_ARCH)/boot/$(CHCORE_PLAT)/init/*.S)
+INIT_ASM_SRCS := $(wildcard arch/$(CHCORE_ARCH)/boot/$(CHCORE_PLAT)/init/*.S) \
+                 $(wildcard arch/$(CHCORE_ARCH)/trustzone/spd/$(CHCORE_SPD)/init/*.S)
 INIT_ASM_OBJS := $(INIT_ASM_SRCS:%.S=%.S.o)
 
 ALL_OBJS := $(C_OBJS) $(ASM_OBJS) $(INIT_C_OBJS) $(INIT_ASM_OBJS)
