@@ -15,13 +15,15 @@ Q=@
 
 # libc
 LIBC_PROJ_DIR := $(realpath user/chcore-libc)
+ifeq ($(OH_DIR),)
+OH_DIR := $(realpath ../../../)
+endif
 LIBC_DIR := $(LIBC_PROJ_DIR)/musl-libc
 LIBCHCORE_DIR := $(LIBC_PROJ_DIR)/libchcore
 LIBCHCORE_SCRIPTS_DIR := $(LIBCHCORE_DIR)/cmake
 LIBCHCORE_OVERRIDES_DIR := $(LIBCHCORE_DIR)/porting/overrides
 LIBCHCORE_PATCHES_DIR := $(LIBCHCORE_DIR)/porting/patches
 LIBCHCORE_ARCH_INCLUDES_DIR := $(LIBCHCORE_DIR)/arch/$(CHCORE_ARCH)
-OH_DIR := $(realpath ../../../)
 SECURE_FUNCTION_DIR := $(OH_DIR)/third_party/bounds_checking_function
 MUSL_LIBC_DIR := $(OH_DIR)/third_party/musl
 LIB_OHTEE_OBJS = $(wildcard user/chcore-libs/sys-libs/libohtee/*.c.o)
