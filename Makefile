@@ -37,7 +37,8 @@ endif
 
 libc:
 	# copy musl-libc first
-	cp -r $(MUSL_LIBC_DIR) $(LIBC_DIR) 
+	cp -r $(MUSL_LIBC_DIR) $(LIBC_DIR)
+	rm $(LIBC_DIR)/bundle.json
 	ln -sf $(OH_DIR)/.repo/projects/third_party/musl.git $(LIBC_DIR)/.git
 	$(Q)bash $(LIBCHCORE_SCRIPTS_DIR)/do_override_dir.sh $(LIBCHCORE_OVERRIDES_DIR) $(LIBC_DIR) \
 	&& bash $(LIBCHCORE_SCRIPTS_DIR)/do_patch_dir.sh $(LIBCHCORE_PATCHES_DIR) $(LIBC_DIR) \
