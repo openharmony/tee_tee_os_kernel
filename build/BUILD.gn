@@ -10,31 +10,19 @@
 
 import("//build/config/clang/clang.gni")
 import("//build/ohos.gni")
-action("cp_obj") {
-    tee_gen_path = "${root_gen_dir}/base/tee"
-    script = "cp_tee.sh"
-    outputs = [ "${tee_gen_path}tee_os_kernel/kernel/bl32.bin" ]
-    args = [
-        rebase_path("//"),
-        rebase_path("${tee_gen_path}"),
-    ]
-}
 
 action("build") {
-    tee_gen_path = "${root_gen_dir}/base/tee"
     script = "build_tee.sh"
-    deps = [ ":cp_obj" ]
     outputs = [ "${target_out_dir}/bl32.bin" ]
     args = [
         rebase_path("//"),
-        rebase_path("${tee_gen_path}/tee_os_kernel"),
-        rebase_path("${tee_gen_path}/tee_os_framework"),
+        rebase_path("//base/tee/tee_os_kernel"),
+        rebase_path("//base/tee/tee_os_framework"),
     ]
 }
 
 group("tee_os") {
     deps = [
-        ":cp_obj",
         ":build",
     ]
 }

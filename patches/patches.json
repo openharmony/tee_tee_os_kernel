@@ -3,12 +3,12 @@
         {
             "project":"build",
             "path":"build",
-            "pr_url":"https://gitee.com/openharmony/build/pulls/2287/files"
+            "pr_url":"https://gitee.com/openharmony/build/pulls/2287"
         },
         {
             "project":"vendor_hihope",
             "path":"vendor/hihope",
-            "pr_url":"https://gitee.com/openharmony/vendor_hihope/pulls/924/files"
+            "pr_url":"https://gitee.com/openharmony/vendor_hihope/pulls/925"
         }
     ]
 }
