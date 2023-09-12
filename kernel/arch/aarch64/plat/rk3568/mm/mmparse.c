@@ -53,5 +53,5 @@ void parse_mem_map(void *info)
     tag_tos_mem.drm_mem.size = 0;
     tag_tos_mem.drm_mem.flags = 0;
     tag_tos_mem.version = 65536;
-    atags_set_tag(ATAG_TOS_MEM, &tag_tos_mem);
+    set_tos_mem_tag(&tag_tos_mem);
 }
