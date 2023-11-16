@@ -23,13 +23,12 @@ int user_handle_irq(int irq)
     struct irq_notification *irq_notic;
 
     irq_notic = irq_notifcs[irq];
-    BUG_ON(!irq_notic);
 
     /*
      * If the interrupt handler thread is not ready for handling a new
      * interrupt, we ignore a nested interrupt.
      */
-    if (!irq_notic->user_handler_ready) {
+    if (!irq_notic || !irq_notic->user_handler_ready) {
         kdebug("One interrupt (irq: %d) is ingored since the handler "
                "thread is not ready.\n",
                irq);
@@ -43,6 +42,8 @@ int user_handle_irq(int irq)
     arch_disable_irqno(irq_notic->intr_vector);
 
     signal_irq_notific(irq_notic);
+    sched();
+    eret_to_thread(switch_context());
     /* Never returns. */
 
     BUG_ON(1);
@@ -96,6 +97,22 @@ out_fail:
     return ret;
 }
 
+int sys_irq_stop(cap_t irq_cap)
+{
+    struct irq_notification *irq_notifc = NULL;
+    int ret = 0;
+    irq_notifc = obj_get(current_thread->cap_group, irq_cap, TYPE_IRQ);
+    if (!irq_notifc) {
+        ret = -ECAPBILITY;
+        goto out;
+    }
+    
+    ret = stop_irq_notific(irq_notifc);
+
+out:
+    return ret;
+}
+
 int sys_irq_wait(cap_t irq_cap, bool is_block)
 {
     struct irq_notification *irq_notifc = NULL;
@@ -111,7 +128,10 @@ int sys_irq_wait(cap_t irq_cap, bool is_block)
      * we enable the corresponding irq.
      */
     arch_enable_irqno(irq_notifc->intr_vector);
-    wait_irq_notific(irq_notifc);
+    ret = wait_irq_notific(irq_notifc);
+    if (ret) {
+        goto out;
+    }
 
     /* Never returns */
     BUG_ON(1);
@@ -133,4 +153,22 @@ int sys_irq_ack(cap_t irq_cap)
     obj_put(irq_notifc);
 out:
     return ret;
+}
+
+int sys_disable_irqno(int irq)
+{
+    plat_disable_irqno(irq);
+    return 0;
+}
+
+int sys_enable_irqno(int irq)
+{
+    plat_enable_irqno(irq);
+    return 0;
+}
+
+int sys_irq_op(int irq, int op, long val)
+{
+    extern int gicv3_op(int irq, int op, long val);
+    return gicv3_op(irq, op, val);
 }

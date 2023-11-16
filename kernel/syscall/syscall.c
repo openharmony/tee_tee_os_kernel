@@ -252,6 +252,10 @@ const void *syscall_table[NR_SYSCALL] = {
     [SYS_irq_register] = sys_irq_register,
     [SYS_irq_wait] = sys_irq_wait,
     [SYS_irq_ack] = sys_irq_ack,
+    [SYS_disable_irqno] = sys_disable_irqno,
+    [SYS_enable_irqno] = sys_enable_irqno,
+    [SYS_irq_op] = sys_irq_op,
+    [SYS_irq_stop] = sys_irq_stop,
 
 #ifdef CHCORE_ENABLE_FMAP
     /* - page fault */
