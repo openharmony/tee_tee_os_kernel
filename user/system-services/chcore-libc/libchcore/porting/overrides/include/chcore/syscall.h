@@ -82,6 +82,10 @@ int usys_map_pmo_with_length(cap_t pmo_cap, vaddr_t addr, unsigned long perm,
 cap_t usys_irq_register(int irq);
 int usys_irq_wait(cap_t irq_cap, bool is_block);
 int usys_irq_ack(cap_t irq_cap);
+int usys_disable_irqno(int irq);
+int usys_enable_irqno(int irq);
+int usys_irq_op(int irq, int op, long val);
+int usys_irq_stop(cap_t irq_cap);
 cap_t usys_create_notifc(void);
 int usys_wait(cap_t notifc_cap, bool is_block, void *timeout);
 int usys_notify(cap_t notifc_cap);

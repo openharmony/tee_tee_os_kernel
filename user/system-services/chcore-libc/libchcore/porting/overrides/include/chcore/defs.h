@@ -194,6 +194,11 @@
 #define CHCORE_SYS_cache_config      158
 #define CHCORE_SYS_disable_local_irq 159
 #define CHCORE_SYS_enable_local_irq  160
+#define CHCORE_SYS_disable_irqno     155
+#define CHCORE_SYS_enable_irqno      156
+#define CHCORE_SYS_irq_op            40
+#define CHCORE_SYS_irq_stop          41
+
 /* - page fault */
 #define CHCORE_SYS_user_fault_register 165
 #define CHCORE_SYS_user_fault_map      166

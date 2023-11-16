@@ -35,8 +35,9 @@ int wait_notific(struct notification *notifc, bool is_block,
                  struct timespec *timeout);
 int signal_notific(struct notification *notifc);
 
-void wait_irq_notific(struct irq_notification *notifc);
-void signal_irq_notific(struct irq_notification *notifc);
+int stop_irq_notific(struct irq_notification *notifc);
+int wait_irq_notific(struct irq_notification *notifc);
+int signal_irq_notific(struct irq_notification *notifc);
 
 void notification_deinit(void *ptr);
 

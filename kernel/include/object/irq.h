@@ -35,7 +35,11 @@ void irq_deinit(void *irq_ptr);
 
 /* Syscalls */
 cap_t sys_irq_register(int irq);
+int sys_irq_stop(cap_t irq_cap);
 int sys_irq_wait(cap_t irq_cap, bool is_block);
 int sys_irq_ack(cap_t irq_cap);
+int sys_disable_irqno(int irq);
+int sys_enable_irqno(int irq);
+int sys_irq_op(int irq, int op, long val);
 
 #endif /* OBJECT_IRQ_H */
