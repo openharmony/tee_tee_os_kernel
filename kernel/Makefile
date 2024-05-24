@@ -28,7 +28,7 @@ CFLAGS += -DLOG_LEVEL=1
 LDFLAGS =-target $(CHCORE_CROSS_COMPILE)  -no-pie -nostdlib -nostartfiles \
 		 -Wl,--build-id=none,--no-dynamic-linker -fuse-ld=lld
 
-OBJCOPY := llvm-objcopy
+OBJCOPY := $(CHCORE_COMPILER_DIR)/bin/llvm-objcopy
 
 ARCH_DIRS := backtrace irq machine mm sched sync trustzone
 ARCH_PATH := arch/$(CHCORE_ARCH)
