@@ -45,6 +45,11 @@ static int __tee_msg_receive(struct channel *channel, void *recv_buf,
 
     if (list_empty(&channel->msg_queue)) {
         kinfo("%s: list_empty(&channel->msg_queue)\n", __func__);
+        if (timeout == OS_NO_WAIT) {
+            unlock(&msg_hdl->lock);
+            unlock(&channel->lock);
+            return E_EX_TIMER_TIMEOUT;
+        }
         msg_hdl->server_msg_record.server = current_thread;
         msg_hdl->server_msg_record.recv_buf = recv_buf;
         msg_hdl->server_msg_record.recv_len = recv_len;
@@ -55,9 +60,6 @@ static int __tee_msg_receive(struct channel *channel, void *recv_buf,
         unlock(&msg_hdl->lock);
         unlock(&channel->lock);
 
-        if (timeout == OS_NO_WAIT) {
-            return E_EX_TIMER_TIMEOUT;
-        }
 
         /* obj_put due to noreturn */
         obj_put(msg_hdl);
