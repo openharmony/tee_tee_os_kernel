@@ -32,7 +32,7 @@ ifneq ($(CHCORE_COMPILER_DIR),)
 export CHCORE_COMPILER_DIR := $(CHCORE_COMPILER_DIR)
 else
 # use clang 15.0.4 by default
-export CHCORE_COMPILER_DIR := $(OH_DIR)/prebuilts/clang/ohos/linux-x86_64/15.0.4/llvm/
+export CHCORE_COMPILER_DIR := $(OH_DIR)/prebuilts/clang/ohos/linux-x86_64/llvm/
 endif
 
 libc:
