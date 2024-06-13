@@ -51,6 +51,7 @@ void smc_init(void)
     init_smc_page_table();
 }
 
+static bool kernel_shared_var_recved = false;
 static kernel_shared_varibles_t kernel_var;
 
 void handle_yield_smc(unsigned long x0, unsigned long x1, unsigned long x2,
@@ -66,7 +67,8 @@ void handle_yield_smc(unsigned long x0, unsigned long x1, unsigned long x2,
     /* Switch from SMC page table to process page table */
     switch_vmspace_to(current_thread->vmspace);
 
-    if (x2 == 0xf) {
+    if (!kernel_shared_var_recved && x2 == 0xf) {
+        kernel_shared_var_recved = true;
         kernel_var.params_stack[0] = x0;
         kernel_var.params_stack[1] = x1;
         kernel_var.params_stack[2] = x2;
