@@ -46,17 +46,26 @@ void get_elf_info(const char *binary, struct elf_info *info)
     struct elf_file *elf;
     int i;
     u64 size = 0;
+    u64 min_vaddr, max_vaddr;
 
     elf = elf_parse_file(binary);
     if (!elf) {
         printf("parse elf fail\n");
         return;
     }
+
+    min_vaddr = (u64)-1;
+    max_vaddr = 0;
     for (i = 0; i < elf->header.e_phnum; ++i) {
         if (elf->p_headers[i].p_type != PT_LOAD)
             continue;
-        size += elf->p_headers[i].p_memsz;
+        if (elf->p_headers[i].p_vaddr < min_vaddr)
+            min_vaddr = elf->p_headers[i].p_vaddr;
+        if (elf->p_headers[i].p_vaddr + elf->p_headers[i].p_memsz > max_vaddr)
+            max_vaddr = elf->p_headers[i].p_vaddr + elf->p_headers[i].p_memsz;
     }
+
+    size = max_vaddr - min_vaddr;
 
     info->entry = elf->header.e_entry;
     info->flags = elf->header.e_flags;
