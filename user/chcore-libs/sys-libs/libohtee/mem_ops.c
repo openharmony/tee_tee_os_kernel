@@ -454,9 +454,8 @@ uint32_t free_sharemem(void *addr, uint32_t size)
     }
 
     chcore_auto_unmap_pmo(entry->pmo, entry->vaddr, entry->size);
-    ret = usys_revoke_cap(entry->pmo, false);
+    ret = usys_revoke_cap(entry->pmo, true);
     htable_del(&entry->vaddr2ent_node);
-    chcore_free_vaddr(entry->vaddr, entry->size);
     free(entry);
 
 out:
@@ -471,6 +470,12 @@ int32_t map_sharemem(uint32_t src_task, uint64_t vaddr, uint64_t size,
     cap_t pmo;
     void *out_vaddr;
     struct mem_entry *entry;
+    vaddr_t vaddr_round, vaddr_offset;
+    size_t real_size;
+
+    vaddr_round = ROUND_DOWN(vaddr, PAGE_SIZE);
+    vaddr_offset = vaddr -  vaddr_round;
+    real_size = size + vaddr_offset;
 
     if (src_task == 0) {
         src_task = GTASK_TASKID;
@@ -478,7 +483,7 @@ int32_t map_sharemem(uint32_t src_task, uint64_t vaddr, uint64_t size,
 
     pthread_mutex_lock(&lock);
 
-    pmo = __get_sharemem(src_task, vaddr);
+    pmo = __get_sharemem(src_task, vaddr_round);
     if (pmo < 0) {
         ret = pmo;
         goto out;
@@ -490,16 +495,16 @@ int32_t map_sharemem(uint32_t src_task, uint64_t vaddr, uint64_t size,
         goto out_revoke_pmo;
     }
 
-    out_vaddr = chcore_auto_map_pmo(pmo, size, VM_READ | VM_WRITE);
+    out_vaddr = chcore_auto_map_pmo(pmo, real_size, VM_READ | VM_WRITE);
     if (out_vaddr == NULL) {
         ret = -errno;
         goto out_free_entry;
     }
-    *vaddr_out = (uint64_t)out_vaddr;
+    *vaddr_out = (uint64_t)out_vaddr + (uint64_t)vaddr_offset;
 
     entry->pmo = pmo;
     entry->vaddr = (vaddr_t)out_vaddr;
-    entry->size = size;
+    entry->size = real_size;
     init_hlist_node(&entry->vaddr2ent_node);
     init_hlist_node(&entry->pmo2ent_node);
     htable_add(&vaddr2ent, (u32)(vaddr_t)vaddr, &entry->vaddr2ent_node);
@@ -511,6 +516,33 @@ out_free_entry:
     free(entry);
 out_revoke_pmo:
     usys_revoke_cap(pmo, false);
+out:
+    pthread_mutex_unlock(&lock);
+    return ret;
+}
+
+uint32_t unmap_sharemem(void *addr, uint32_t size)
+{
+    int ret;
+    struct mem_entry *entry;
+    vaddr_t vaddr, vaddr_round;
+
+    vaddr = (vaddr_t)addr;
+    vaddr_round = ROUND_DOWN(vaddr, PAGE_SIZE);
+
+    pthread_mutex_lock(&lock);
+
+    entry = __get_entry_by_vaddr((vaddr_t)vaddr_round);
+    if (entry == NULL) {
+        ret = -ENOENT;
+        goto out;
+    }
+
+    chcore_free_vaddr(entry->vaddr, entry->size);
+    htable_del(&entry->vaddr2ent_node);
+    free(entry);
+    ret = 0;
+
 out:
     pthread_mutex_unlock(&lock);
     return ret;

@@ -53,6 +53,8 @@ uint32_t free_sharemem(void *addr, uint32_t size);
 int32_t map_sharemem(uint32_t src_task, uint64_t vaddr, uint64_t size,
                      uint64_t *vaddr_out);
 
+uint32_t unmap_sharemem(void *addr, uint32_t size);
+
 uint64_t virt_to_phys(uintptr_t vaddr);
 
 int32_t dump_mem_info(struct stat_mem_info *info, int print_history);
