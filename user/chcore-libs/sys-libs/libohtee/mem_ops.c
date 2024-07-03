@@ -475,7 +475,7 @@ int32_t map_sharemem(uint32_t src_task, uint64_t vaddr, uint64_t size,
 
     vaddr_round = ROUND_DOWN(vaddr, PAGE_SIZE);
     vaddr_offset = vaddr -  vaddr_round;
-    real_size = size + vaddr_offset;
+    real_size = ROUND_UP(size + vaddr_offset, PAGE_SIZE);
 
     if (src_task == 0) {
         src_task = GTASK_TASKID;
@@ -538,7 +538,7 @@ uint32_t unmap_sharemem(void *addr, uint32_t size)
         goto out;
     }
 
-    chcore_free_vaddr(entry->vaddr, entry->size);
+    chcore_auto_unmap_pmo(entry->pmo, entry->vaddr, entry->size);
     htable_del(&entry->vaddr2ent_node);
     free(entry);
     ret = 0;
