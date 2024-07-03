@@ -12,12 +12,10 @@ import("//build/config/clang/clang.gni")
 import("//build/ohos.gni")
 
 action("build") {
-    script = "build_tee.sh"
-    outputs = [ "${target_out_dir}/bl32.bin" ]
+    script = "oh_build_tee.sh"
+    outputs = [ "$root_build_dir/../tee/src_tmp/tee_os_kernel/kernel/bl32.bin" ]
     args = [
-        rebase_path("//"),
-        rebase_path("//base/tee/tee_os_kernel"),
-        rebase_path("//base/tee/tee_os_framework"),
+        rebase_path("$root_build_dir/../.."),
     ]
 }
 
