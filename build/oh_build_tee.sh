@@ -8,19 +8,22 @@
 # PURPOSE.
 # See the Mulan PSL v2 for more details.
 set -e
-echo "cp_tee.sh start"
+
 OH_TOP_DIR=$1
-OUT_DIR=$2
-if [[ -z "$OH_TOP_DIR" ]]; then
-    OH_TOP_DIR=$(pwd)/../../../..
-fi
-if [[ -z "$OH_TOP_DIR" ]]; then
-    OUT_DIR=$(OH_TOP_DIR)/out/tee
-fi
-if [[ -z "$OUT_DIR/tee" ]]; then
-    mkdir -p $OUT_DIR/tee
-fi
-rm -rf ${OUT_DIR}/tee_os_kernel
-rm -rf ${OUT_DIR}/tee_os_framework
-cp -r ${OH_TOP_DIR}/base/tee/tee_os_kernel ${OUT_DIR}
-cp -r ${OH_TOP_DIR}/base/tee/tee_os_framework ${OUT_DIR}
+TEE_OUT_PATH=${OH_TOP_DIR}/out/tee
+TEE_SRC_TMP_PATH=${TEE_OUT_PATH}/src_tmp
+TEE_OS_KERNEL_TMP_DIR=${TEE_SRC_TMP_PATH}/tee_os_kernel
+TEE_FRAMEWORK_TMP_DIR=${TEE_SRC_TMP_PATH}/tee_os_framework
+TEE_BUILD_PATH=${TEE_OS_KERNEL_TMP_DIR}/build
+
+function copy_tee_source()
+{
+    rm -rf ${TEE_OUT_PATH}
+    mkdir -p ${TEE_SRC_TMP_PATH}
+    cp -arf ${OH_TOP_DIR}/base/tee/tee_os_kernel ${TEE_SRC_TMP_PATH}/
+    cp -arf ${OH_TOP_DIR}/base/tee/tee_os_framework ${TEE_SRC_TMP_PATH}/
+}
+
+copy_tee_source
+
+${TEE_BUILD_PATH}/build_tee.sh ${OH_TOP_DIR} ${TEE_OS_KERNEL_TMP_DIR} ${TEE_FRAMEWORK_TMP_DIR}
