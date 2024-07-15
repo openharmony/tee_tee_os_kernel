@@ -179,6 +179,6 @@ void unexpected_handler(void)
 
 void handle_fiq(void)
 {
-    save_and_release_fpu(current_thread);
+    save_and_release_fpu_owner();
     smc_call(SMC_STD_RESPONSE, SMC_EXIT_PREEMPTED);
 }
