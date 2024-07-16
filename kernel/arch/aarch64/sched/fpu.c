@@ -230,4 +230,27 @@ void save_and_release_fpu(struct thread *thread)
     }
 }
 
+void save_and_release_fpu_owner(void)
+{
+    struct per_cpu_info *info;
+    struct thread *fpu_owner;
+    u32 cpuid;
+
+    cpuid = smp_get_cpu_id();
+    lock(&fpu_owner_locks[cpuid]);
+
+    /* Get the current fpu_owner (per CPU) */
+    info = get_per_cpu_info();
+    fpu_owner = info->fpu_owner;
+
+    if (fpu_owner) {
+        save_fpu_state(fpu_owner);
+        fpu_owner->thread_ctx->is_fpu_owner = -1;
+        info->fpu_owner = NULL;
+        disable_fpu_usage();
+    }
+
+    unlock(&fpu_owner_locks[cpuid]);
+}
+
 #endif

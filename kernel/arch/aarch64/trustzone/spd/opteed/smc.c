@@ -154,6 +154,7 @@ int sys_tee_switch_req(struct smc_registers *regs_u)
         return -1;
     }
 
+    save_and_release_fpu_owner();
     arch_set_thread_return(current_thread, 0);
     smc_call(regs_k.x0, regs_k.x1, regs_k.x2, regs_k.x3, regs_k.x4);
     BUG("Should not reach here.\n");
