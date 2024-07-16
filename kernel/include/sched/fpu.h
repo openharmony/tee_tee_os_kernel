@@ -38,6 +38,7 @@ void enable_fpu_usage(void);
 void change_fpu_owner(void);
 /* Used when migrating a thread from local CPU to other CPUs */
 void save_and_release_fpu(struct thread *thread);
+void save_and_release_fpu_owner(void);
 #endif
 
 #endif /* SCHED_FPU_H */
