@@ -507,7 +507,7 @@ int32_t map_sharemem(uint32_t src_task, uint64_t vaddr, uint64_t size,
     entry->size = real_size;
     init_hlist_node(&entry->vaddr2ent_node);
     init_hlist_node(&entry->pmo2ent_node);
-    htable_add(&vaddr2ent, (u32)(vaddr_t)vaddr, &entry->vaddr2ent_node);
+    htable_add(&vaddr2ent, (u32)(vaddr_t)out_vaddr, &entry->vaddr2ent_node);
 
     pthread_mutex_unlock(&lock);
     return 0;
