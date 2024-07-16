@@ -396,7 +396,7 @@
 +	lwip_ipc_struct->conn_cap = 0;
 +	lwip_ipc_struct->server_id = NET_MANAGER;
 +#endif
-+
++     __pthread_self()->tid = usys_get_thread_id(0);
 +    result = args->start_func(args->start_arg);
 +    __pthread_exit(result);
 +    return 0;
@@ -417,7 +417,7 @@
 +	lwip_ipc_struct->conn_cap = 0;
 +	lwip_ipc_struct->server_id = NET_MANAGER;
 +#endif
-+
++    __pthread_self()->tid = usys_get_thread_id(0);
 +    int (*start)(void *) = (int (*)(void *))args->start_func;
 +    __pthread_exit((void *)(uintptr_t)start(args->start_arg));
 +    return 0;
