@@ -44,6 +44,9 @@
 #define SYS_revoke_cap    18
 #define SYS_transfer_caps 62
 
+#define SYS_irq_op            40
+#define SYS_irq_stop          41
+
 /* Multitask */
 /* - create & exit */
 #define SYS_create_cap_group 80

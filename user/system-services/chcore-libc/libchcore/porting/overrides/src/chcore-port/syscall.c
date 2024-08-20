@@ -245,6 +245,23 @@ cap_t usys_irq_register(int irq)
     return chcore_syscall1(CHCORE_SYS_irq_register, irq);
 }
 
+int usys_disable_irqno(int irq)
+{
+    return chcore_syscall1(CHCORE_SYS_disable_irqno, irq);
+}
+int usys_enable_irqno(int irq)
+{
+    return chcore_syscall1(CHCORE_SYS_enable_irqno, irq);
+}
+int usys_irq_op(int irq, int op, long val)
+{
+    return chcore_syscall3(CHCORE_SYS_irq_op, irq, op, val);
+}
+int usys_irq_stop(cap_t irq_cap)
+{
+    return chcore_syscall1(CHCORE_SYS_irq_stop, irq_cap);
+}
+
 int usys_irq_wait(cap_t irq_cap, bool is_block)
 {
     return chcore_syscall2(CHCORE_SYS_irq_wait, irq_cap, is_block);

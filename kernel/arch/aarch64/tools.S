@@ -45,6 +45,16 @@ BEGIN_FUNC(flush_dcache_area)
 	ret
 END_FUNC(flush_dcache_area)
 
+BEGIN_FUNC(put8)
+    strb w1,[x0]
+    ret
+END_FUNC(put8)
+
+BEGIN_FUNC(get8)
+    ldrb w0,[x0]
+    ret
+END_FUNC(get8)
+
 BEGIN_FUNC(put32)
     str w1,[x0]
     ret

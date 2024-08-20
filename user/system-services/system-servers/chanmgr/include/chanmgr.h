@@ -25,6 +25,8 @@ struct chanmgr {
     struct htable name2chan;
     struct htable cid2chan;
     struct htable badge2chan;
+    struct htable name2taskid;
+    struct htable badge2tamgr;
     pthread_mutex_t lock;
 };
 
@@ -37,6 +39,8 @@ void chanmgr_deinit(void);
 void chanmgr_handle_create_channel(ipc_msg_t *ipc_msg, badge_t badge, int pid,
                                    int tid);
 void chanmgr_handle_remove_channel(ipc_msg_t *ipc_msg, badge_t badge, int pid,
+                                   int tid);
+void chanmgr_handle_register_tamgr(ipc_msg_t *ipc_msg, badge_t badge, int pid,
                                    int tid);
 void chanmgr_handle_hunt_by_name(ipc_msg_t *ipc_msg, int pid, int tid);
 void chanmgr_handle_get_ch_from_path(ipc_msg_t *ipc_msg, int pid, int tid);
