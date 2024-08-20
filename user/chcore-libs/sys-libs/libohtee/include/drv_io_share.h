@@ -9,17 +9,14 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
-#ifndef ARCH_AARCH64_ARCH_TOOLS_H
-#define ARCH_AARCH64_ARCH_TOOLS_H
 
-void flush_dcache_area(unsigned long addr, unsigned long size);
-void enable_irq(void);
-void disable_irq(void);
-void enable_uart_irq(int irqno);
-void uart_irq_handler(void);
-void put8(unsigned long addr, unsigned char data);
-unsigned char get8(unsigned long addr);
-void put32(unsigned long addr, unsigned int data);
-unsigned int get32(unsigned long addr);
+#ifndef DRV_IO_SHARED_H
+#define DRV_IO_SHARED_H
 
-#endif /* ARCH_AARCH64_ARCH_TOOLS_H */
+#include <stdint.h>
+#include <sys/mman.h>
+
+void *ioremap(uintptr_t phys_addr, unsigned long size, int32_t prot);
+int32_t iounmap(uintptr_t pddr, const void *addr);
+
+#endif /* DRV_IO_SHARED_H */

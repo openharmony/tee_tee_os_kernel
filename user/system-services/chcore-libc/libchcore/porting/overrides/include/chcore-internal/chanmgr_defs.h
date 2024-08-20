@@ -26,6 +26,7 @@ extern "C" {
 enum CHAN_REQ {
     CHAN_REQ_CREATE_CHANNEL = 1,
     CHAN_REQ_REMOVE_CHANNEL,
+    CHAN_REQ_REGISTER_TAMGR,
     CHAN_REQ_HUNT_BY_NAME,
     CHAN_REQ_GET_CH_FROM_PATH,
     CHAN_REQ_GET_CH_FROM_TASKID,
@@ -48,6 +49,10 @@ struct chan_request {
             int ch_num;
             char name[CHAN_REQ_NAME_LEN];
         } remove_channel;
+
+        struct {
+            char name[CHAN_REQ_NAME_LEN];
+        } register_tamgr;
 
         struct {
             uint32_t taskid;

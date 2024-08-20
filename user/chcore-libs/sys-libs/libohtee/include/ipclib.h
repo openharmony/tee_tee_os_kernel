@@ -125,4 +125,6 @@ uint32_t get_self_taskid(void);
 
 bool check_ref_valid(cref_t cref);
 
+int tamgr_register(const char *name);
+
 #endif

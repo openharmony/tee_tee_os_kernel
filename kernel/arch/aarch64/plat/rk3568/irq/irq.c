@@ -15,176 +15,240 @@
 #include <common/types.h>
 #include <common/macro.h>
 #include <mm/mm.h>
+#include <object/irq.h>
 
-/* Maximum number of interrups a GIC can support */
-#define GIC_MAX_INTS 1020
+static int nr_lines;
 
-/* Number of interrupts in one register */
-#define NUM_INTS_PER_REG 32
-
-/* Offsets from gic.gicd_base */
-#define GICD_CTLR          (0x000)
-#define GICD_TYPER         (0x004)
-#define GICD_IGROUPR(n)    (0x080 + (n)*4)
-#define GICD_ISENABLER(n)  (0x100 + (n)*4)
-#define GICD_ICENABLER(n)  (0x180 + (n)*4)
-#define GICD_ISPENDR(n)    (0x200 + (n)*4)
-#define GICD_ICPENDR(n)    (0x280 + (n)*4)
-#define GICD_IPRIORITYR(n) (0x400 + (n)*4)
-#define GICD_ITARGETSR(n)  (0x800 + (n)*4)
-#define GICD_IGROUPMODR(n) (0xd00 + (n)*4)
-#define GICD_SGIR          (0xF00)
-
-#define GICD_CTLR_ENABLEGRP1S (1 << 2)
-
-static inline u32 read_icc_ctlr(void)
-{
-    u64 val64 = 0;
-    asm volatile("mrs %0, "
-                 "S3_0_C12_C12_4"
-                 : "=r"(val64));
-    return val64;
-}
-
-static inline void write_icc_ctlr(u32 val)
-{
-    u64 val64 = val;
-    asm volatile("msr "
-                 "S3_0_C12_C12_4"
-                 ", %0"
-                 :
-                 : "r"(val64));
-}
-
-static inline void write_icc_pmr(u32 val)
-{
-    u64 val64 = val;
-    asm volatile("msr "
-                 "S3_0_C4_C6_0"
-                 ", %0"
-                 :
-                 : "r"(val64));
-}
-
-static inline void write_icc_igrpen1(u32 val)
-{
-    u64 val64 = val;
-    asm volatile("msr "
-                 "S3_0_C12_C12_7"
-                 ", %0"
-                 :
-                 : "r"(val64));
-}
+enum gic_op_t {
+	GICV3_OP_SET_PRIO = 1,
+	GICV3_OP_SET_GROUP,
+	GICV3_OP_SET_TARGET,
+	GICV3_OP_SET_PENDING,
+	GICV3_OP_MASK,
+};
 
 static inline void set32(vaddr_t addr, u32 set_mask)
 {
     put32(addr, get32(addr) | set_mask);
 }
 
-static size_t probe_max_it(vaddr_t gicd_base)
+static inline void clr32(vaddr_t addr, u32 set_mask)
 {
-    int i;
-    u32 old_ctlr;
-    size_t ret = 0;
-    const size_t max_regs =
-        ((GIC_MAX_INTS + NUM_INTS_PER_REG - 1) / NUM_INTS_PER_REG) - 1;
-
-    /*
-     * Probe which interrupt number is the largest.
-     */
-    old_ctlr = read_icc_ctlr();
-    write_icc_ctlr(0);
-    for (i = max_regs; i >= 0; i--) {
-        u32 old_reg;
-        u32 reg;
-        int b;
-
-        old_reg = get32(gicd_base + GICD_ISENABLER(i));
-        put32(gicd_base + GICD_ISENABLER(i), 0xffffffff);
-        reg = get32(gicd_base + GICD_ISENABLER(i));
-        put32(gicd_base + GICD_ICENABLER(i), ~old_reg);
-        for (b = NUM_INTS_PER_REG - 1; b >= 0; b--) {
-            if ((u32)BIT(b) & reg) {
-                ret = i * NUM_INTS_PER_REG + b;
-                goto out;
-            }
-        }
-    }
-out:
-    write_icc_ctlr(old_ctlr);
-    return ret;
+    put32(addr, get32(addr) & ~set_mask);
 }
 
-void __plat_interrupt_init_percpu(vaddr_t gicd_base)
+static inline bool gicv3_enable_sre(void)
 {
-    /* per-CPU interrupts config:
-     * ID0-ID7(SGI)   for Non-secure interrupts
-     * ID8-ID15(SGI)  for Secure interrupts.
-     * All PPI config as Non-secure interrupts.
-     */
-    put32(gicd_base + GICD_IGROUPR(0), 0xffff00ff);
+	u32 val;
 
-    /* Set the priority mask to permit Non-secure interrupts, and to
-     * allow the Non-secure world to adjust the priority mask itself
-     */
-    write_icc_pmr(0x80);
-    write_icc_igrpen1(1);
+	val = read_sys_reg(ICC_SRE_EL1);
+	if (val & ICC_SRE_EL1_SRE)
+		return true;
+
+	val |= ICC_SRE_EL1_SRE;
+	write_sys_reg(ICC_SRE_EL1, val);
+	isb();
+	val = read_sys_reg(ICC_SRE_EL1);
+
+	return !!(val & ICC_SRE_EL1_SRE);
 }
 
-void __plat_interrupt_init(vaddr_t gicd_base)
+static inline void gicv3_set_routing(u64 cpumask, void *rout_reg)
 {
-    size_t n, max_it;
+	put32((u64)rout_reg, (u32)cpumask);
+	put32((u64)(rout_reg + 4), (u32)(cpumask >> 32));
+}
 
-    max_it = probe_max_it(gicd_base);
+/* Wait for completion of a redist change */
+static void gic_wait_redist_complete(void)
+{
+	while (get32(GICR_PER_CPU_BASE(smp_get_cpu_id())) & GICD_CTLR_RWP);
+}
 
-    for (n = 0; n <= max_it / NUM_INTS_PER_REG; n++) {
-        /* Disable interrupts */
-        put32(gicd_base + GICD_ICENABLER(n), 0xffffffff);
+/* Wait for completion of a dist change */
+static inline void gic_wait_dist_complete(void)
+{
+	while (get32(GICD_BASE) & GICD_CTLR_RWP);
+}
 
-        /* Make interrupts non-pending */
-        put32(gicd_base + GICD_ICPENDR(n), 0xffffffff);
+void gicv3_distributor_init(void)
+{
+	unsigned int gic_type_reg, i, val;
+	unsigned long cpumask;
 
-        /* Mark interrupts non-secure */
-        if (n == 0) {
-            /* per-CPU inerrupts config:
-             * ID0-ID7(SGI)	  for Non-secure interrupts
-             * ID8-ID15(SGI)  for Secure interrupts.
-             * All PPI config as Non-secure interrupts.
-             */
-            put32(gicd_base + GICD_IGROUPR(n), 0xffff00ff);
-        } else {
-            put32(gicd_base + GICD_IGROUPR(n), 0xffffffff);
-        }
-    }
+	gic_type_reg = get32(GICD_TYPER);
+	nr_lines = GICD_TYPER_IRQS(gic_type_reg);
 
-    write_icc_pmr(0x80);
-    write_icc_igrpen1(1);
-    set32(gicd_base + GICD_CTLR, GICD_CTLR_ENABLEGRP1S);
+	kinfo("nr_lines %d\n", nr_lines);
+
+	/* Disable the distributor. */
+	put32(GICD_CTLR, 0);
+	gic_wait_dist_complete();
+
+	/* Enable distributor with ARE_S, Group1S and Group0 */
+	val = get32(GICD_CTLR);
+	put32(GICD_CTLR, val | GICD_CTLR_ARE_S | GICD_CTLR_ENABLE_G1_S | GICD_CTLR_ENABLE_G0);
+}
+
+static void gicv3_init_cpu_interface(void)
+{
+	unsigned int val;
+
+	/* Make sure that the SRE bit has been set. */
+	if (!gicv3_enable_sre()) {
+		BUG("GICv3 fatal error: SRE bit not set (disabled at EL2)\n");
+		return;
+	}
+
+	val = read_sys_reg(ICC_CTLR_EL1);
+	write_sys_reg(ICC_CTLR_EL1, val & ~(1 << ICC_CTLR_EL1_EOImode_SHIFT));
+	isb();
+
+	val = read_sys_reg(ICC_IGRPEN1_EL1);
+	write_sys_reg(ICC_IGRPEN1_EL1, 1);
+	isb();
+}
+
+static void gicv3_redistributor_init(void)
+{
+	unsigned int gic_wake_reg;
+	unsigned long redis_base, sgi_base;
+
+	redis_base = GICR_PER_CPU_BASE(smp_get_cpu_id());
+
+	/* Clear processor sleep and wait till childasleep is cleard. */
+	gic_wake_reg = get32(redis_base + GICR_WAKER_OFFSET);
+	gic_wake_reg &= ~GICR_WAKER_ProcessorSleep;
+	put32(redis_base + GICR_WAKER_OFFSET, gic_wake_reg);
+	while (get32(redis_base + GICR_WAKER_OFFSET) & GICR_WAKER_ChildrenAsleep);
+
+	gic_wait_redist_complete();
+
+	/* Initialise cpu interface registers. */
+	gicv3_init_cpu_interface();
+}
+
+int gicv3_set_irq_group(int irq, int ns)
+{
+	int idx = irq / NUM_INTS_PER_REG;
+	u32 mask = 1 << (irq % NUM_INTS_PER_REG);
+
+	if (ns) {
+		set32(GICD_IGROUPR(idx), mask);
+		clr32(GICD_IGRPMODR(idx), mask);
+	} else {
+		clr32(GICD_IGROUPR(idx), mask);
+		set32(GICD_IGRPMODR(idx), mask);
+	}
+
+	gic_wait_dist_complete();
+	return 0;
+}
+
+void gicv3_enable_irqno(int irq)
+{
+	int cpu_id;
+
+	if (irq < 32) {
+		BUG_ON(1);
+	} else {
+		/* irq in distributor. */
+		put32(GICD_BASE + GICD_ISENABLER_OFFSET + ((irq >> 5) << 2),
+		      (1 << (irq % 32)));
+		gic_wait_dist_complete();
+	}
+}
+
+void gicv3_disable_irqno(int irq)
+{
+	int cpu_id;
+
+	if (irq < 32) {
+		BUG_ON(1);
+		// irq in redist
+		cpu_id = smp_get_cpu_id();
+		put32(GICR_PER_CPU_BASE(cpu_id) + GICR_SGI_BASE_OFFSET
+		      + GICR_ICENABLER0_OFFSET,
+		      (1 << (irq % 32)));
+		gic_wait_redist_complete();
+	} else {
+		// irq in dist
+		put32(GICD_BASE + GICD_ICENABLER_OFFSET + ((irq >> 5) << 2),
+		      (1 << (irq % 32)));
+		gic_wait_dist_complete();
+	}
+}
+
+int gicv3_set_irq_target(int irq, unsigned int cpuid)
+{
+	unsigned int mpidr;
+	unsigned long cpumask;
+
+	if (cpuid != 0) {
+		return -EINVAL;
+	}
+
+	asm volatile("mrs %0, mpidr_el1\n\t" : "=r"(mpidr));
+	gicv3_disable_irqno(irq);
+	cpumask = ((mpidr >> 0) & 0xff) |
+		  (((mpidr >> 8) & 0xff) << 8) |
+		  (((mpidr >> 16) & 0xff) << 16) |
+		  ((((unsigned long)mpidr >> 24) & 0xff) << 32);
+	gicv3_set_routing(cpumask, (void *)(GICD_IROUTER + irq * 8));
+	gicv3_enable_irqno(irq);
+	gic_wait_dist_complete();
+
+	return 0;
+}
+
+int gicv3_set_irq_prio(int irq, int prio)
+{
+	put8(GICD_IPRIORITYR + irq, prio);
+	return 0;
+}
+
+int gicv3_set_irq_pending(int irq, bool set)
+{
+	int idx = irq / NUM_INTS_PER_REG;
+	u32 mask = 1 << (irq % NUM_INTS_PER_REG);
+
+	if (set) {
+		set32(GICD_ISPENDR(idx), mask);
+	} else {
+		set32(GICD_ICPENDR(idx), mask);
+	}
+
+	return 0;
+}
+
+void gicv3_ack_irq(int irq)
+{
+	write_sys_reg(ICC_EOIR1_EL1, irq);
 }
 
 void plat_interrupt_init(void)
 {
-    vaddr_t gicd_base;
+	unsigned int cpuid = smp_get_cpu_id();
 
-    gicd_base = phys_to_virt(get_gicd_base());
+	if (cpuid == 0)
+		gicv3_distributor_init();
 
-    if (smp_get_cpu_id() == 0) {
-        __plat_interrupt_init(gicd_base);
-    } else {
-        __plat_interrupt_init_percpu(gicd_base);
-    }
+	gicv3_redistributor_init();
 }
 
 void plat_send_ipi(u32 cpu, u32 ipi)
 {
+	BUG("ipi not implemented\n");
 }
 
 void plat_enable_irqno(int irq)
 {
+	gicv3_enable_irqno(irq);
 }
 
 void plat_disable_irqno(int irq)
 {
+	gicv3_disable_irqno(irq);
 }
 
 void plat_ack_irq(int irq)
@@ -193,4 +257,71 @@ void plat_ack_irq(int irq)
 
 void plat_handle_irq(void)
 {
+	unsigned int irqnr = 0;
+	unsigned int irqstat = 0;
+	int ret;
+
+	irqstat = read_sys_reg(ICC_IAR1_EL1);
+	dsb(sy);
+	irqnr = irqstat & 0x3ff;
+
+	gicv3_ack_irq(irqnr);
+
+	if (likely(irqnr > 15 && irqnr < 1020)) {
+		kinfo("%s: recv irq %d\n", __func__, irqnr);
+		user_handle_irq(irqnr);
+	} else if (irqnr < 16) {
+		BUG("NO SGI in TEE now\n");
+	}
+
+	isb();
+}
+
+void gic_op_raise_pi(size_t it)
+{
+	gicv3_set_irq_pending(it, true);
+}
+
+int gicv3_irq_mask(int irq, bool mask)
+{
+	if (mask) {
+		gicv3_disable_irqno(irq);
+	} else {
+		gicv3_enable_irqno(irq);
+	}
+	return 0;
+}
+
+int gicv3_op(int irq, int op, long val)
+{
+	int ret;
+
+	if (irq < 0 || irq >= MAX_IRQ_NUM) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	switch (op) {
+	case GICV3_OP_SET_PRIO:
+		ret = gicv3_set_irq_prio(irq, (int)val);
+		break;
+	case GICV3_OP_SET_GROUP:
+		ret = gicv3_set_irq_group(irq, (int)val);
+		break;
+	case GICV3_OP_SET_TARGET:
+		ret = gicv3_set_irq_target(irq, (int)val);
+		break;
+	case GICV3_OP_SET_PENDING:
+		ret = gicv3_set_irq_pending(irq, (bool)val);
+		break;
+	case GICV3_OP_MASK:
+		ret = gicv3_irq_mask(irq, (bool)val);
+		break;
+	default:
+		ret = -EINVAL;
+		break;
+	}
+
+out:
+	return ret;
 }

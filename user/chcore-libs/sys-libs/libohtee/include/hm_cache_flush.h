@@ -9,17 +9,19 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
-#ifndef ARCH_AARCH64_ARCH_TOOLS_H
-#define ARCH_AARCH64_ARCH_TOOLS_H
 
-void flush_dcache_area(unsigned long addr, unsigned long size);
-void enable_irq(void);
-void disable_irq(void);
-void enable_uart_irq(int irqno);
-void uart_irq_handler(void);
-void put8(unsigned long addr, unsigned char data);
-unsigned char get8(unsigned long addr);
-void put32(unsigned long addr, unsigned int data);
-unsigned int get32(unsigned long addr);
+#ifndef LIBMMGR_HM_CACHE_FLUSH_H
+#define LIBMMGR_HM_CACHE_FLUSH_H
 
-#endif /* ARCH_AARCH64_ARCH_TOOLS_H */
+#include <stdint.h>
+
+#define DMA_FROM_DEVICE 2
+#define DMA_TO_DEVICE 1
+
+void dma_flush_range(uint64_t start, uint64_t end);
+void dma_inv_range(uint64_t start, uint64_t end);
+void dma_map_area(uint64_t start, uint64_t size, int32_t dir);
+void dma_unmap_area(uint64_t start, uint64_t size, int32_t dir);
+void dma_clean_range(uint64_t start, uint64_t end);
+
+#endif /* LIBMMGR_HM_CACHE_FLUSH_H */

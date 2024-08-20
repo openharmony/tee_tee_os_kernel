@@ -22,11 +22,13 @@
 int hook_sys_create_device_pmo(unsigned long paddr, unsigned long size)
 {
     /* This one is provided for user-level drivers only. */
+    /*
     if (current_cap_group->badge >= APP_BADGE_START
         || current_cap_group->badge < DRIVER_BADGE_START) {
         kwarn("An unthorized process tries to create device pmo.\n");
         return -EPERM;
     }
+    */
     return 0;
 }
 

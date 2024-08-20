@@ -165,12 +165,38 @@ int wait_notific(struct notification *notifc, bool is_block,
     return ret;
 }
 
-void wait_irq_notific(struct irq_notification *irq_notifc)
+int stop_irq_notific(struct irq_notification *irq_notifc)
 {
     struct notification *notifc;
+    struct thread *target, *tmp;
 
     notifc = &(irq_notifc->notifc);
     lock(&notifc->notifc_lock);
+    notifc->state = OBJECT_STATE_INVALID;
+    for_each_in_list_safe (target, tmp, notification_queue_node, &notifc->waiting_threads) {
+        list_del(&target->notification_queue_node);
+        notifc->waiting_threads_count--;
+        target->thread_ctx->state = TS_INTER;
+        arch_set_thread_return(target, -ECANCELED);
+        BUG_ON(sched_enqueue(target));
+    }
+    unlock(&notifc->notifc_lock);
+
+    return 0;
+}
+
+int wait_irq_notific(struct irq_notification *irq_notifc)
+{
+    struct notification *notifc;
+    int ret;
+
+    notifc = &(irq_notifc->notifc);
+    lock(&notifc->notifc_lock);
+
+    if (notifc->state == OBJECT_STATE_INVALID) {
+        ret = -EINVAL;
+        goto out_unlock;
+    }
 
     /* Add this thread to waiting list */
     list_append(&current_thread->notification_queue_node,
@@ -187,16 +213,27 @@ void wait_irq_notific(struct irq_notification *irq_notifc)
 
     eret_to_thread(switch_context());
     /* The control flow will never reach here */
+    BUG_ON(1);
+
+out_unlock:
+    unlock(&notifc->notifc_lock);
+    return ret;
 }
 
-void signal_irq_notific(struct irq_notification *irq_notifc)
+int signal_irq_notific(struct irq_notification *irq_notifc)
 {
     struct notification *notifc;
     struct thread *target = NULL;
+    int ret = 0;
 
     notifc = &(irq_notifc->notifc);
 
     lock(&notifc->notifc_lock);
+
+    if (notifc->state == OBJECT_STATE_INVALID) {
+        ret = -EINVAL;
+        goto out_unlock;
+    }
 
     irq_notifc->user_handler_ready = 0;
 
@@ -217,10 +254,12 @@ void signal_irq_notific(struct irq_notification *irq_notifc)
     BUG_ON(target->thread_ctx->affinity != NO_AFF
            && target->thread_ctx->affinity != smp_get_cpu_id());
 
-    unlock(&notifc->notifc_lock);
-    obj_put(irq_notifc);
+    target->thread_ctx->state = TS_INTER;
+    BUG_ON(sched_enqueue(target));
 
-    sched_to_thread(target);
+out_unlock:
+    unlock(&notifc->notifc_lock);
+    return ret;
 }
 
 void try_remove_timeout(struct thread *target)
