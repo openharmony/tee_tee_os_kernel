@@ -29,6 +29,9 @@ void chanmgr_dispatch(ipc_msg_t *ipc_msg, badge_t client_badge, int pid,
     case CHAN_REQ_REMOVE_CHANNEL:
         chanmgr_handle_remove_channel(ipc_msg, client_badge, pid, tid);
         break;
+    case CHAN_REQ_REGISTER_TAMGR:
+        chanmgr_handle_register_tamgr(ipc_msg, client_badge, pid, tid);
+        break;
     case CHAN_REQ_HUNT_BY_NAME:
         chanmgr_handle_hunt_by_name(ipc_msg, pid, tid);
         break;
