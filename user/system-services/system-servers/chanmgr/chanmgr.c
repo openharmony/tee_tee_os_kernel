@@ -67,6 +67,14 @@ struct channel_entry {
     struct reg_items_st reg_items;
 };
 
+struct tamgr_entry {
+    struct hlist_node name2taskid_node;
+    struct hlist_node badge2tamgr_node;
+    badge_t badge;
+    char *name;
+    uint32_t taskid;
+};
+
 static struct chanmgr chanmgr;
 
 void channel_entry_init(struct channel_entry *entry)
@@ -95,6 +103,8 @@ int chanmgr_init(void)
     init_htable(&chanmgr.name2chan, CHANMGR_DEFAULT_HTABLE_SIZE);
     init_htable(&chanmgr.cid2chan, CHANMGR_DEFAULT_HTABLE_SIZE);
     init_htable(&chanmgr.badge2chan, CHANMGR_DEFAULT_HTABLE_SIZE);
+    init_htable(&chanmgr.name2taskid, CHANMGR_DEFAULT_HTABLE_SIZE);
+    init_htable(&chanmgr.badge2tamgr, CHANMGR_DEFAULT_HTABLE_SIZE);
     ret = pthread_mutex_init(&chanmgr.lock, NULL);
 
     return ret;
@@ -142,6 +152,23 @@ static struct channel_entry *__get_entry_by_cid(uint32_t taskid, int ch_num)
     return NULL;
 }
 
+static struct tamgr_entry *__get_tamgr_entry_by_name(const char *name)
+{
+    struct hlist_head *bucket;
+    struct tamgr_entry *entry;
+    uint32_t hashsum;
+
+    hashsum = __hash_name(name);
+    bucket = htable_get_bucket(&chanmgr.name2taskid, hashsum);
+    for_each_in_hlist (entry, name2taskid_node, bucket) {
+        if (strcmp(name, entry->name) == 0) {
+            return entry;
+        }
+    }
+
+    return NULL;
+}
+
 void chanmgr_handle_create_channel(ipc_msg_t *ipc_msg, badge_t badge, int pid,
                                    int tid)
 {
@@ -160,17 +187,16 @@ void chanmgr_handle_create_channel(ipc_msg_t *ipc_msg, badge_t badge, int pid,
            sizeof(struct reg_items_st));
     if (__chan_name_empty(req->create_channel.name)) {
         reg_items.reg_name = false;
-        reg_items.reg_tamgr = false;
     }
     if (!__ch_num_valid(req->create_channel.ch_num)) {
         reg_items.reg_pid = false;
     }
-    if (!reg_items.reg_name && !reg_items.reg_pid && !reg_items.reg_tamgr) {
+    if (!reg_items.reg_name && !reg_items.reg_pid) {
         ret = -EINVAL;
         goto out_fail;
     }
 
-    if (reg_items.reg_name || reg_items.reg_tamgr) {
+    if (reg_items.reg_name) {
         entry = __get_entry_by_name(req->create_channel.name);
         if (entry != NULL) {
             ret = -EEXIST;
@@ -201,7 +227,7 @@ void chanmgr_handle_create_channel(ipc_msg_t *ipc_msg, badge_t badge, int pid,
     entry->taskid = taskid;
     entry->badge = badge;
 
-    if (reg_items.reg_name || reg_items.reg_tamgr) {
+    if (reg_items.reg_name) {
         len = strlen(req->create_channel.name);
         entry->name = malloc(len + 1);
         if (entry->name == NULL) {
@@ -218,7 +244,7 @@ void chanmgr_handle_create_channel(ipc_msg_t *ipc_msg, badge_t badge, int pid,
     memcpy(&entry->reg_items, &reg_items, sizeof(struct reg_items_st));
 
     htable_add(&chanmgr.badge2chan, badge, &entry->badge2chan_node);
-    if (reg_items.reg_name || reg_items.reg_tamgr) {
+    if (reg_items.reg_name) {
         hashsum = __hash_name(entry->name);
         htable_add(&chanmgr.name2chan, hashsum, &entry->name2chan_node);
     }
@@ -281,10 +307,65 @@ out:
     ipc_return(ipc_msg, ret);
 }
 
+void chanmgr_handle_register_tamgr(ipc_msg_t *ipc_msg, badge_t badge, int pid,
+                                   int tid)
+{
+    int ret;
+    struct tamgr_entry *entry;
+    struct chan_request *req = (struct chan_request *)ipc_get_msg_data(ipc_msg);
+    char name[CHAN_REQ_NAME_LEN];
+    size_t len;
+
+    pthread_mutex_lock(&chanmgr.lock);
+
+    memcpy(name, req->register_tamgr.name, sizeof(name));
+    name[CHAN_REQ_NAME_LEN - 1] = '\0';
+    if (__chan_name_empty(name)) {
+        ret = -EINVAL;
+        goto out;
+    }
+
+    entry = __get_tamgr_entry_by_name(name);
+    if (entry) {
+        ret = -EEXIST;
+        goto out;
+    }
+
+    entry = malloc(sizeof(*entry));
+    if (entry == NULL) {
+        ret = -ENOMEM;
+        goto out;
+    }
+
+    len = strlen(name);
+    entry->name = malloc(len + 1);
+    if (entry->name == NULL) {
+        ret = -ENOMEM;
+        goto out_free_entry;
+    }
+    memcpy(entry->name, name, len + 1);
+    init_hlist_node(&entry->badge2tamgr_node);
+    init_hlist_node(&entry->name2taskid_node);
+    entry->badge = badge;
+    entry->taskid = pid_to_taskid(tid, pid);
+
+    htable_add(&chanmgr.badge2tamgr, badge, &entry->badge2tamgr_node);
+    htable_add(&chanmgr.name2taskid, __hash_name(entry->name), &entry->name2taskid_node);
+
+    pthread_mutex_unlock(&chanmgr.lock);
+    ipc_return(ipc_msg, 0);
+
+out_free_entry:
+    free(entry);
+out:
+    pthread_mutex_unlock(&chanmgr.lock);
+    ipc_return(ipc_msg, ret);
+}
+
 void chanmgr_handle_hunt_by_name(ipc_msg_t *ipc_msg, int pid, int tid)
 {
     int ret;
-    struct channel_entry *entry = NULL;
+    struct tamgr_entry *entry = NULL;
     struct chan_request *req = (struct chan_request *)ipc_get_msg_data(ipc_msg);
 
     pthread_mutex_lock(&chanmgr.lock);
@@ -294,22 +375,19 @@ void chanmgr_handle_hunt_by_name(ipc_msg_t *ipc_msg, int pid, int tid)
         goto out;
     }
 
-    entry = __get_entry_by_name(req->hunt_by_name.name);
+    entry = __get_tamgr_entry_by_name(req->hunt_by_name.name);
     if (entry == NULL) {
         ret = -ENOENT;
         goto out;
     }
 
-    if (entry->reg_items.reg_tamgr) {
-        req->hunt_by_name.taskid = entry->taskid;
-        /* TODO: gtask's taskid is 0 */
-        if (req->hunt_by_name.taskid == GTASK_TASKID) {
-            req->hunt_by_name.taskid = 0;
-        }
-        ret = 0;
-    } else {
-        ret = -ENOENT;
+    req->hunt_by_name.taskid = entry->taskid;
+    /* TODO: gtask's taskid is 0 */
+    if (req->hunt_by_name.taskid == GTASK_TASKID) {
+        req->hunt_by_name.taskid = 0;
     }
+    ret = 0;
+
 out:
     pthread_mutex_unlock(&chanmgr.lock);
     ipc_return(ipc_msg, ret);
@@ -395,6 +473,7 @@ void chanmgr_destructor(badge_t client_badge)
 {
     struct hlist_head *bucket;
     struct channel_entry *entry, *tmp;
+    struct tamgr_entry *tamgr_entry, *tamgr_tmp;
 
     pthread_mutex_lock(&chanmgr.lock);
 
@@ -412,6 +491,16 @@ void chanmgr_destructor(badge_t client_badge)
             }
             channel_entry_deinit(entry);
             free(entry);
+        }
+    }
+
+    bucket = htable_get_bucket(&chanmgr.badge2tamgr, client_badge);
+    for_each_in_hlist_safe (tamgr_entry, tamgr_tmp, badge2tamgr_node, bucket) {
+        if (tamgr_entry->badge == client_badge) {
+            htable_del(&tamgr_entry->badge2tamgr_node);
+            htable_del(&tamgr_entry->name2taskid_node);
+            free(tamgr_entry->name);
+            free(tamgr_entry);
         }
     }
 

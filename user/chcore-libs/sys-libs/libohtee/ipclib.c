@@ -254,6 +254,29 @@ static int __ipc_util_get_ch_from_taskid(uint32_t taskid, int ch_num, int *cap)
     return ret;
 }
 
+static int __ipc_util_register_tamgr(const char *name)
+{
+    ipc_msg_t *ipc_msg;
+    struct chan_request *req;
+    int ret;
+
+    ipc_msg = ipc_create_msg(chanmgr_ipc_struct, sizeof(struct chan_request));
+    req = (struct chan_request *)ipc_get_msg_data(ipc_msg);
+    req->req = CHAN_REQ_REGISTER_TAMGR;
+
+    if (strlen(name) >= CHAN_REQ_NAME_LEN) {
+        ret = -ENAMETOOLONG;
+        goto out;
+    }
+    memcpy(req->register_tamgr.name, name, strlen(name) + 1);
+
+    ret = ipc_call(chanmgr_ipc_struct, ipc_msg);
+    ipc_destroy_msg(ipc_msg);
+
+out:
+    return ret;
+}
+
 #define HTABLE_SIZE 1024
 
 struct task2capmgr {
@@ -323,6 +346,18 @@ int32_t ipc_create_channel(const char *name, int32_t ch_cnt, cref_t *pp_ch[],
 {
     int ret, i;
     cap_t chan[2];
+
+    if (name && reg_items.reg_tamgr) {
+        ret = __ipc_util_register_tamgr(name);
+        if (ret < 0)
+            goto out_fail;
+        reg_items.reg_tamgr = false;
+    }
+
+    if (!reg_items.reg_tamgr && !reg_items.reg_pid && !reg_items.reg_name) {
+        ret = 0;
+        goto out_fail;
+    }
 
     if (!(ch_cnt > 0 && ch_cnt <= CH_CNT_MAX)) {
         ret = -EINVAL;
@@ -771,4 +806,9 @@ uint32_t get_self_taskid(void)
 bool check_ref_valid(cref_t cref)
 {
     return cref >= 0;
+}
+
+int tamgr_register(const char *name)
+{
+    return __ipc_util_register_tamgr(name);
 }

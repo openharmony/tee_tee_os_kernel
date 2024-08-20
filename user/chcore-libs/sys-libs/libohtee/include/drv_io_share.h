@@ -14,10 +14,7 @@
 #define DRV_IO_SHARED_H
 
 #include <stdint.h>
-
-#define PROT_NONE 0
-#define PROT_READ 1
-#define PROT_WRITE 2
+#include <sys/mman.h>
 
 void *ioremap(uintptr_t phys_addr, unsigned long size, int32_t prot);
 int32_t iounmap(uintptr_t pddr, const void *addr);
