@@ -147,8 +147,7 @@ uint32_t sys_hwi_resume(uint32_t hwi_num, uint16_t hwi_prio, uint16_t mode)
 
 uint32_t sys_hwi_delete(uint32_t hwi_num)
 {
-    struct hwi_cb *hwi_cb;
-    int ret;
+    int ret = 0;
 
     if (hwi_cbs[hwi_num] == NULL) {
         ret = -EINVAL;
