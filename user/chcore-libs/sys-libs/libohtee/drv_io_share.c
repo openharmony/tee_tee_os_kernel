@@ -113,6 +113,7 @@ out_free_entry:
     free(entry);
 out_unlock:
     pthread_mutex_unlock(&lock);
+    return NULL;
 }
 
 int32_t iounmap(uintptr_t pddr, const void *addr)
