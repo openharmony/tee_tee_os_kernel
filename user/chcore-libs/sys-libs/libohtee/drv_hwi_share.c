@@ -40,8 +40,6 @@ struct hwi_cb {
 
 static struct hwi_cb *hwi_cbs[MAX_IRQ_NUM];
 
-static cap_t irq_notif;
-
 static void *__irq_thread(void *arg) {
     struct hwi_cb *hwi = (struct hwi_cb *)arg;
     uint32_t hwi_num = hwi->hwi_num;
