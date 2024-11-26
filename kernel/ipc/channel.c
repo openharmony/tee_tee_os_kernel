@@ -44,7 +44,7 @@ static int __tee_msg_receive(struct channel *channel, void *recv_buf,
     }
 
     if (list_empty(&channel->msg_queue)) {
-        kinfo("%s: list_empty(&channel->msg_queue)\n", __func__);
+        kdebug("%s: list_empty(&channel->msg_queue)\n", __func__);
         if (timeout == OS_NO_WAIT) {
             unlock(&msg_hdl->lock);
             unlock(&channel->lock);
@@ -70,7 +70,7 @@ static int __tee_msg_receive(struct channel *channel, void *recv_buf,
         eret_to_thread(switch_context());
         BUG_ON(1);
     } else {
-        kinfo("%s: !list_empty(&channel->msg_queue)\n", __func__);
+        kdebug("%s: !list_empty(&channel->msg_queue)\n", __func__);
         msg_entry = list_entry(
             channel->msg_queue.next, struct msg_entry, msg_queue_node);
         copy_len = MIN(msg_entry->client_msg_record.send_len, recv_len);
@@ -129,7 +129,7 @@ static int __tee_msg_send(struct channel *channel,
     }
 
     if (list_empty(&channel->thread_queue)) {
-        kinfo("%s: list_empty(&channel->thread_queue)\n", __func__);
+        kdebug("%s: list_empty(&channel->thread_queue)\n", __func__);
         msg_entry = kmalloc(sizeof(*msg_entry));
 
         memcpy(&msg_entry->client_msg_record,
@@ -138,7 +138,7 @@ static int __tee_msg_send(struct channel *channel,
 
         list_append(&msg_entry->msg_queue_node, &channel->msg_queue);
     } else {
-        kinfo("%s: !list_empty(&channel->thread_queue)\n", __func__);
+        kdebug("%s: !list_empty(&channel->thread_queue)\n", __func__);
         msg_hdl = list_entry(
             channel->thread_queue.next, struct msg_hdl, thread_queue_node);
 
@@ -180,7 +180,7 @@ static int __tee_msg_send(struct channel *channel,
         arch_set_thread_return(server, 0);
         server->thread_ctx->state = TS_INTER;
         BUG_ON(sched_enqueue(server));
-        kinfo("%s: enqueued %s\n", __func__, server->cap_group->cap_group_name);
+        kdebug("%s: enqueued %s\n", __func__, server->cap_group->cap_group_name);
     out_unlock:
         unlock(&msg_hdl->lock);
     }
@@ -202,7 +202,7 @@ static int __tee_msg_call(struct channel *channel, void *send_buf,
     void *ksend_buf;
     int ret;
 
-    kinfo("%s: %s calls %s\n",
+    kdebug("%s: %s calls %s\n",
           __func__,
           current_cap_group->cap_group_name,
           channel->creater->cap_group_name);
@@ -260,7 +260,7 @@ static int __tee_msg_reply(struct msg_hdl *msg_hdl, void *reply_buf,
     size_t copy_len;
     int ret = 0;
 
-    kinfo("%s: %s replies to %s\n",
+    kdebug("%s: %s replies to %s\n",
           __func__,
           current_cap_group->cap_group_name,
           msg_hdl->client_msg_record.client->cap_group->cap_group_name);
@@ -331,7 +331,7 @@ static int __tee_msg_notify(struct channel *channel, void *send_buf,
     void *ksend_buf;
     int ret;
 
-    kinfo("%s: %s notifies %s\n",
+    kdebug("%s: %s notifies %s\n",
           __func__,
           current_cap_group->cap_group_name,
           channel->creater->cap_group_name);

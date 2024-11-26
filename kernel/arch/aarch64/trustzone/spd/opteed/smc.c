@@ -62,7 +62,7 @@ void handle_yield_smc(unsigned long x0, unsigned long x1, unsigned long x2,
 
     enable_tlogger();
 
-    kinfo("%s x: [%lx %lx %lx %lx %lx]\n", __func__, x0, x1, x2, x3, x4);
+    kdebug("%s x: [%lx %lx %lx %lx %lx]\n", __func__, x0, x1, x2, x3, x4);
 
     /* Switch from SMC page table to process page table */
     switch_vmspace_to(current_thread->vmspace);
