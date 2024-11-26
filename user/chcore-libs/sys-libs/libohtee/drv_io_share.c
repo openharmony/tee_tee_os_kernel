@@ -73,7 +73,7 @@ void *ioremap(uintptr_t phys_addr, unsigned long size, int32_t prot)
     __self_init();
     pthread_mutex_lock(&lock);
 
-    entry = malloc(sizeof(entry));
+    entry = malloc(sizeof(*entry));
     if (entry == NULL) {
         goto out_unlock;
     }
