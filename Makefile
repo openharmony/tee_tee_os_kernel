@@ -37,9 +37,9 @@ endif
 
 libc:
 	# copy musl-libc first
-	cp -r $(MUSL_LIBC_DIR) $(LIBC_DIR)
+	cp -rL $(MUSL_LIBC_DIR) $(LIBC_DIR)
 	rm $(LIBC_DIR)/bundle.json
-	ln -sf $(OH_DIR)/.repo/projects/third_party/musl.git $(LIBC_DIR)/.git
+	cd $(LIBC_DIR) && git checkout 6227345be13b537704a72fc59ebf1735271b52d2 && cd -
 	$(Q)bash $(LIBCHCORE_SCRIPTS_DIR)/do_override_dir.sh $(LIBCHCORE_OVERRIDES_DIR) $(LIBC_DIR) \
 	&& bash $(LIBCHCORE_SCRIPTS_DIR)/do_patch_dir.sh $(LIBCHCORE_PATCHES_DIR) $(LIBC_DIR) \
 	&& cd $(LIBC_DIR) \
@@ -50,7 +50,7 @@ libc:
 		COMPILER_DIR=$(CHCORE_COMPILER_DIR) \
 		COMPILER=$(CHCORE_COMPILER_DIR)/bin/$(CHCORE_COMPILER) \
 		CROSS_COMPILE=$(CHCORE_COMPILER_DIR)/bin/llvm- \
-		CFLAGS="$(CONFIG_FLAGS) -I$(LIBCHCORE_ARCH_INCLUDES_DIR)" \
+		CFLAGS="$(CONFIG_FLAGS) -I$(LIBCHCORE_ARCH_INCLUDES_DIR) -Wno-int-conversion" \
 	&& make -j$(shell nproc) > /dev/null \
 	&& make install
 
@@ -72,7 +72,8 @@ SECURE_FUNCTION_OPTION = -fPIC -fstack-protector-all -Wformat=2 \
 			 -Wstrict-overflow=1 -Wstrict-aliasing=2 \
 			 -Wswitch -Wswitch-default -Wmissing-prototypes \
 			 -I$(SECURE_FUNCTION_DIR)/include \
-			 -I$(SECURE_FUNCTION_SOURCE_DIR)
+			 -I$(SECURE_FUNCTION_SOURCE_DIR) \
+			 -I$(LIBC_DIR)/install/include
 
 SECURE_FUNCTION_CFLAG = -Wall -DNDEBUG -O2 $(SECURE_FUNCTION_OPTION)
 
@@ -81,7 +82,7 @@ SECURE_FUNCTION_SOURCES=$(patsubst $(SECURE_FUNCTION_SOURCE_DIR)/%,%,$(wildcard 
 SECURE_FUNCTION_OBJ_DIR := secure_obj
 SECURE_FUNCTION_OBJS := $(patsubst %.c,$(SECURE_FUNCTION_OBJ_DIR)/%.o,$(SECURE_FUNCTION_SOURCES))
 
-$(SECURE_FUNCTION_OBJ_DIR)/%.o: $(SECURE_FUNCTION_SOURCE_DIR)/%.c
+$(SECURE_FUNCTION_OBJ_DIR)/%.o: $(SECURE_FUNCTION_SOURCE_DIR)/%.c libc
 	$(CHCORE_COMPILER_DIR)/bin/$(CHCORE_COMPILER) --target=aarch64-linux-gnu $(SECURE_FUNCTION_CFLAG) -c $< -o $@
 
 $(SECURE_FUNCTION_OBJ_DIR):
