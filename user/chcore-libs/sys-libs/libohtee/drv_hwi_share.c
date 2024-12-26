@@ -40,8 +40,6 @@ struct hwi_cb {
 
 static struct hwi_cb *hwi_cbs[MAX_IRQ_NUM];
 
-static cap_t irq_notif;
-
 static void *__irq_thread(void *arg) {
     struct hwi_cb *hwi = (struct hwi_cb *)arg;
     uint32_t hwi_num = hwi->hwi_num;
@@ -147,8 +145,7 @@ uint32_t sys_hwi_resume(uint32_t hwi_num, uint16_t hwi_prio, uint16_t mode)
 
 uint32_t sys_hwi_delete(uint32_t hwi_num)
 {
-    struct hwi_cb *hwi_cb;
-    int ret;
+    int ret = 0;
 
     if (hwi_cbs[hwi_num] == NULL) {
         ret = -EINVAL;

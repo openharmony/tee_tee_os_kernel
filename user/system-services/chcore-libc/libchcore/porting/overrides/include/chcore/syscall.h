@@ -25,7 +25,7 @@ void usys_putstr(vaddr_t buffer, size_t size);
 char usys_getc(void);
 
 int usys_tee_push_rdr_update_addr(paddr_t addr, size_t size, bool is_cache_mem,
-                                  char *chip_type_buff, size_t buff_len);
+                                  const char *chip_type_buff, size_t buff_len);
 int usys_debug_rdr_logitem(char *str, size_t str_len);
 
 int usys_get_prio(cap_t thread_cap);
