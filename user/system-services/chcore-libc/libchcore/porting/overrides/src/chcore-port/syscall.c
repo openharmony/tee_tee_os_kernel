@@ -31,7 +31,7 @@ char usys_getc(void)
 }
 
 int usys_tee_push_rdr_update_addr(paddr_t addr, size_t size, bool is_cache_mem,
-                                  char *chip_type_buff, size_t buff_len)
+                                  const char *chip_type_buff, size_t buff_len)
 {
     return chcore_syscall5(CHCORE_SYS_tee_push_rdr_update_addr,
                            addr,
