@@ -20,7 +20,7 @@ CFLAGS = -target $(CHCORE_CROSS_COMPILE) -Wall -Wno-initializer-overrides -Wno-a
 		 -fno-pic -fno-pie -mcmodel=large -O3
 CFLAGS += -Iinclude -Iinclude/arch/${CHCORE_ARCH} \
 		  -Iinclude/arch/${CHCORE_ARCH}/plat/${CHCORE_PLAT} \
-		  -Iinclude/arch/${CHCORE_ARCH}/arch/trustzone/spd/${CHCORE_SPD} \
+          -Iinclude/arch/${CHCORE_ARCH}/arch/trustzone/spd/${CHCORE_SPD} \
 		  -Iarch/${CHCORE_ARCH}/boot/${CHCORE_PLAT}/include
 CFLAGS += $(CONFIG_FLAGS)
 CFLAGS += -DLOG_LEVEL=1
@@ -37,8 +37,8 @@ PLAT_PATH := arch/$(CHCORE_ARCH)/plat/$(CHCORE_PLAT)
 SPD_PATH := arch/$(CHCORE_ARCH)/trustzone/spd/$(CHCORE_SPD)
 DIRS := ipc irq lib mm object sched syscall \
 		$(ARCH_PATH) $(addprefix $(ARCH_PATH)/,$(ARCH_DIRS)) \
-		$(PLAT_PATH) $(addprefix $(PLAT_PATH)/,$(PLAT_DIRS)) \
-		$(SPD_PATH)
+        $(PLAT_PATH) $(addprefix $(PLAT_PATH)/,$(PLAT_DIRS)) \
+        $(SPD_PATH)
 C_SRCS := $(foreach dir,$(DIRS),$(wildcard $(dir)/*.c))
 C_OBJS := $(C_SRCS:%.c=%.c.o)
 ASM_SRCS += $(foreach dir,$(DIRS),$(wildcard $(dir)/*.S))
@@ -81,7 +81,7 @@ INIT_OBJS :=  $(INIT_ASM_OBJS) $(INIT_C_OBJS)
 INIT_OBJS := $(filter %start.S.o, $(INIT_OBJS)) $(filter-out %start.S.o, $(INIT_OBJS))
 INIT_OBJS_LIST := $(subst /,\/,$(INIT_OBJS))
 linker.ld: $(ARCH_PATH)/boot/linker.tpl.ld
-	$(Q)sed 's/$${init_objects}/$(INIT_OBJS_LIST)/g' $< > linker.ld.S
+	$(Q)sed -e 's/$${init_objects}/$(INIT_OBJS_LIST)/g' -e 's/$${incbin_linker_script}/*(.incbin-procmgr_bin)\n        . = ALIGN(4K);/g' $< > linker.ld.S
 	$(Q)$(CC) -E -x c -I $(ARCH_PATH)/boot/$(CHCORE_PLAT)/include linker.ld.S | grep -v "^#"  > linker.ld
 
 incbin_promgr_bin.S: incbin.tpl.S

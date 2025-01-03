@@ -9,25 +9,48 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
+
 ENTRY(_start)
+
+PHDRS
+{
+    text PT_LOAD FLAGS(5);   /* FLAGS: R-X */
+    rodata PT_LOAD FLAGS(4); /* FLAGS: R-- */
+    data PT_LOAD FLAGS(6);   /* FALGS: RW- */
+}
 
 SECTIONS
 {
     . = 0x400000;
 
-    .text : {
+    .text : ALIGN(4K) {
         *(.text*)
-    }
+    } : text
 
-    .data : {
-        *(.data*)
-    }
-
-    .rodata : {
+    .rodata : ALIGN(4K) {
         *(.rodata*)
-    }
+    } : rodata
 
-    .bss : {
+    .data : ALIGN(4K) {
+        *(.data*)
+    } : data
+
+    .bss : ALIGN(4K) {
         *(.bss*)
-    }
+    } : data
+
+    .init_array : ALIGN(4K) {
+        __init_array_start = .;
+        *(SORT_BY_INIT_PRIORITY(.init_array.*)) *(.init_array) 
+        *(SORT_BY_INIT_PRIORITY(.ctors.*))
+    } : data
+    __init_array_end = .;
+
+    .fini_array : ALIGN(4K) {
+        __fini_array_start = .;
+        *(SORT_BY_INIT_PRIORITY(.fini_array.*)) *(.fini_array) 
+        *(SORT_BY_INIT_PRIORITY(.dtors.*))
+    } : data
+    __fini_array_end = .;
 }
+
