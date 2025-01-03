@@ -20,10 +20,26 @@ struct process_metadata {
 };
 
 #define ENV_SIZE_ON_STACK   0x1000
-#define ROOT_BIN_HDR_SIZE   48
+#define ROOT_BIN_HDR_SIZE   216
 #define ROOT_MEM_SIZE_OFF   0
 #define ROOT_ENTRY_OFF      8
 #define ROOT_FLAGS_OFF      16
 #define ROOT_PHENT_SIZE_OFF 24
 #define ROOT_PHNUM_OFF      32
 #define ROOT_PHDR_ADDR_OFF  40
+#define ROOT_PHDR_OFF       48
+#define ROOT_PHENT_SIZE     56
+
+/* Program header content(64bit) */
+#define PHDR_TYPE_OFF   0
+#define PHDR_FLAGS_OFF  4
+#define PHDR_OFFSET_OFF 8
+#define PHDR_VADDR_OFF  16
+#define PHDR_PADDR_OFF  24
+#define PHDR_FILESZ_OFF 32
+#define PHDR_MEMSZ_OF   40
+#define PHDR_ALIGN_OFF  48
+
+#define PHDR_FLAGS_R (1 << 2)
+#define PHDR_FLAGS_W (1 << 1)
+#define PHDR_FLAGS_X (1 << 0)

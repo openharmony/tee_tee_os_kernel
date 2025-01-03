@@ -219,14 +219,77 @@ void create_root_thread(void)
     thread = obj_alloc(TYPE_THREAD, sizeof(*thread));
     BUG_ON(thread == NULL);
 
-    /* Fill the parameter of the thread struct */
-    ret = vmspace_map_range(init_vmspace,
-                            ROOT_THREAD_VADDR,
-                            pmo->size,
-                            VMR_READ | VMR_WRITE | VMR_EXEC,
-                            pmo);
-    BUG_ON(ret < 0);
+for (int i = 0; i < meta.phnum; i++) {
+                unsigned int flags;
+                unsigned long offset, vaddr, filesz, memsz;
 
+                memcpy(data,
+                       (void *)((unsigned long)&binary_procmgr_bin_start
+                                + ROOT_PHDR_OFF + i * ROOT_PHENT_SIZE
+                                + PHDR_FLAGS_OFF),
+                       sizeof(data));
+                flags = (unsigned int)le32_to_cpu(*(u32 *)data);
+
+                memcpy(data,
+                       (void *)((unsigned long)&binary_procmgr_bin_start
+                                + ROOT_PHDR_OFF + i * ROOT_PHENT_SIZE
+                                + PHDR_OFFSET_OFF),
+                       sizeof(data));
+                offset = (unsigned long)le64_to_cpu(*(u64 *)data);
+
+                memcpy(data,
+                       (void *)((unsigned long)&binary_procmgr_bin_start
+                                + ROOT_PHDR_OFF + i * ROOT_PHENT_SIZE
+                                + PHDR_VADDR_OFF),
+                       sizeof(data));
+                vaddr = (unsigned long)le64_to_cpu(*(u64 *)data);
+
+                memcpy(data,
+                       (void *)((unsigned long)&binary_procmgr_bin_start
+                                + ROOT_PHDR_OFF + i * ROOT_PHENT_SIZE
+                                + PHDR_FILESZ_OFF),
+                       sizeof(data));
+                filesz = (unsigned long)le64_to_cpu(*(u64 *)data);
+
+                memcpy(data,
+                       (void *)((unsigned long)&binary_procmgr_bin_start
+                                + ROOT_PHDR_OFF + i * ROOT_PHENT_SIZE
+                                + PHDR_MEMSZ_OF),
+                       sizeof(data));
+                memsz = (unsigned long)le64_to_cpu(*(u64 *)data);
+
+                printk("%s %d i: %d flags 0x%lx offset 0x%lx vaddr 0x%lx filesz 0x%lx memsz 0x%lx\n", __PRETTY_FUNCTION__, __LINE__, i, flags, offset, vaddr, filesz, memsz);
+
+                struct pmobject *segment_pmo;
+                ret = create_pmo(ROUND_UP(memsz, PAGE_SIZE),
+                                 PMO_DATA,
+                                 root_cap_group,
+                                 0,
+                                 &segment_pmo);
+                BUG_ON(ret < 0);
+                memset((void *)phys_to_virt(segment_pmo->start),
+                       0,
+                       segment_pmo->size);
+                memcpy((void *)phys_to_virt(segment_pmo->start),
+                       (void *)(((unsigned long)&binary_procmgr_bin_start)
+                                + ROOT_BIN_HDR_SIZE + offset),
+                       filesz);
+
+                unsigned vmr_flags = 0;
+                if (flags & PHDR_FLAGS_R)
+                        vmr_flags |= VMR_READ;
+                if (flags & PHDR_FLAGS_W)
+                        vmr_flags |= VMR_WRITE;
+                if (flags & PHDR_FLAGS_X)
+                        vmr_flags |= VMR_EXEC;
+
+                ret = vmspace_map_range(init_vmspace,
+                                        vaddr,
+                                        segment_pmo->size,
+                                        vmr_flags,
+                                        segment_pmo);
+                BUG_ON(ret < 0);
+        }
     stack = ROOT_THREAD_STACK_BASE + ROOT_THREAD_STACK_SIZE;
 
     /* Allocate a physical for the main stack for prepare_env */

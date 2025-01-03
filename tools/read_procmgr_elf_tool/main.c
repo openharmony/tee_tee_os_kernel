@@ -39,6 +39,7 @@ struct elf_info {
     u64 phentsize;
     u64 phnum;
     u64 phdr_addr;
+    struct elf_program_header phdr[3];
 };
 
 void get_elf_info(const char *binary, struct elf_info *info)
@@ -46,6 +47,7 @@ void get_elf_info(const char *binary, struct elf_info *info)
     struct elf_file *elf;
     int i;
     u64 size = 0;
+    u64 offset;
     u64 min_vaddr, max_vaddr;
 
     elf = elf_parse_file(binary);
@@ -73,6 +75,19 @@ void get_elf_info(const char *binary, struct elf_info *info)
     info->phentsize = elf->header.e_phentsize;
     info->phnum = elf->header.e_phnum;
     info->phdr_addr = elf->p_headers[0].p_vaddr + elf->header.e_phoff;
+
+    /*
+     * first section will start at the beginning of the stripped ELF file
+     * so the file offsets need to be adjusted accordingly
+     */
+    offset = elf->p_headers[0].p_offset;
+    info->phdr[0] = elf->p_headers[0];
+    info->phdr[0].p_offset -= offset;
+    info->phdr[1] = elf->p_headers[1];
+    info->phdr[1].p_offset -= offset;
+    info->phdr[2] = elf->p_headers[2];
+    info->phdr[2].p_offset -= offset;
+
     free(elf);
 }
 
