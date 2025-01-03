@@ -82,6 +82,7 @@ struct cpio_file {
 void cpio_init_g_files(void);
 int cpio_extract_file(const void *addr, const char *dirat);
 void cpio_extract(const void *addr, const char *dirat);
+void cpio_free_g_files(void);
 int cpio_extract_single(const void *addr, const char *target,
                         int (*cpio_single_file_filler)(const void *start,
                                                        size_t size, void *data),

@@ -107,6 +107,7 @@ int tmpfs_load_image(const char *start)
 
 error:
     free(tmp);
+    cpio_free_g_files();
     return err;
 }
 
