@@ -32,16 +32,6 @@
     (((u64)(be32_to_cpu(*((u32 *)(x) + 1)))) << 32 \
      | (be32_to_cpu(*((u32 *)(x)) + 2)))
 
-struct elf_info {
-    u64 mem_size;
-    u64 entry;
-    u64 flags;
-    u64 phentsize;
-    u64 phnum;
-    u64 phdr_addr;
-    struct elf_program_header phdr[3];
-};
-
 void get_elf_info(const char *binary, struct elf_info *info)
 {
     struct elf_file *elf;
@@ -50,7 +40,7 @@ void get_elf_info(const char *binary, struct elf_info *info)
     u64 offset;
     u64 min_vaddr, max_vaddr;
 
-    elf = elf_parse_file(binary);
+    elf = elf_parse_file(binary, info);
     if (!elf) {
         printf("parse elf fail\n");
         return;
@@ -81,12 +71,9 @@ void get_elf_info(const char *binary, struct elf_info *info)
      * so the file offsets need to be adjusted accordingly
      */
     offset = elf->p_headers[0].p_offset;
-    info->phdr[0] = elf->p_headers[0];
-    info->phdr[0].p_offset -= offset;
-    info->phdr[1] = elf->p_headers[1];
-    info->phdr[1].p_offset -= offset;
-    info->phdr[2] = elf->p_headers[2];
-    info->phdr[2].p_offset -= offset;
+    for (int i = 0; i < 3; i++) {
+        info->phdr[i].p_offset -= offset;
+    }
 
     free(elf);
 }
