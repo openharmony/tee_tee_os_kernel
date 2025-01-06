@@ -379,7 +379,7 @@ void procmgr_dispatch(ipc_msg_t *ipc_msg, badge_t client_badge)
         break;
     case PROC_REQ_TEE_FREE_SHM:
         handle_tee_free_sharemem(ipc_msg, client_badge);
-        break;
+		break;
 #endif /* CHCORE_OH_TEE */
     default:
         error("Invalid request type!\n");
@@ -449,8 +449,9 @@ void boot_default_apps(void)
 {
 #ifdef CHCORE_OH_TEE
     char *chanmgr_argv = "/chanmgr.srv";
-    procmgr_launch_process(
+    struct proc_node *chanmgr_node = procmgr_launch_process(
         1, &chanmgr_argv, "chanmgr", true, INIT_BADGE, NULL, COMMON_APP);
+    set_chanmgr_cap(chanmgr_node->proc_mt_cap);
     /* Start OH-TEE gtask. */
     char *gtask_argv = "/gtask.elf";
     struct proc_node *gtask_node = procmgr_launch_process(
