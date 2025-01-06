@@ -288,3 +288,8 @@ unsigned long get_free_mem_size_from_buddy(struct phys_mem_pool *pool)
     }
     return total_size;
 }
+
+unsigned long get_total_mem_size_from_buddy(struct phys_mem_pool *pool)
+{
+        return pool->pool_mem_size;
+}
