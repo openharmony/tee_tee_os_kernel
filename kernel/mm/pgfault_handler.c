@@ -77,6 +77,8 @@ static void __do_general_cow(struct vmspace *vmspace, struct vmregion *vmr,
 
     update_pte(fault_pte, L3, &new_pte_attr);
 
+    vmspace->rss += PAGE_SIZE;
+
     /* Step-6: Flush TLB of user virtual page(user_vpa) */
     user_vpa = ROUND_DOWN(fault_addr, PAGE_SIZE);
     flush_tlb_by_range(vmspace, user_vpa, PAGE_SIZE);
@@ -192,6 +194,7 @@ int handle_trans_fault(struct vmspace *vmspace, vaddr_t fault_addr)
              * page.
              */
             void *new_va = get_pages(0);
+            long rss = 0;
             BUG_ON(new_va == NULL);
             pa = virt_to_phys(new_va);
             BUG_ON(pa == 0);
@@ -206,7 +209,8 @@ int handle_trans_fault(struct vmspace *vmspace, vaddr_t fault_addr)
 
             /* Add mapping in the page table */
             lock(&vmspace->pgtbl_lock);
-            map_range_in_pgtbl(vmspace->pgtbl, fault_addr, pa, PAGE_SIZE, perm);
+            map_range_in_pgtbl(vmspace->pgtbl, fault_addr, pa, PAGE_SIZE, perm, &rss);
+            vmspace->rss += rss;
             unlock(&vmspace->pgtbl_lock);
         } else {
             /*
@@ -232,9 +236,11 @@ int handle_trans_fault(struct vmspace *vmspace, vaddr_t fault_addr)
              */
             if (pmo->type == PMO_SHM || pmo->type == PMO_ANONYM) {
                 /* Add mapping in the page table */
+                long rss = 0;
                 lock(&vmspace->pgtbl_lock);
                 map_range_in_pgtbl(
-                    vmspace->pgtbl, fault_addr, pa, PAGE_SIZE, perm);
+                    vmspace->pgtbl, fault_addr, pa, PAGE_SIZE, perm, &rss);
+                vmspace->rss += rss;
                 unlock(&vmspace->pgtbl_lock);
             }
         }

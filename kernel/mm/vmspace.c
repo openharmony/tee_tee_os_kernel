@@ -213,13 +213,15 @@ static int fill_page_table(struct vmspace *vmspace, struct vmregion *vmr)
     paddr_t pa;
     vaddr_t va;
     int ret;
+    long rss = 0;
 
     pm_size = vmr->pmo->size;
     pa = vmr->pmo->start;
     va = vmr->start;
 
     lock(&vmspace->pgtbl_lock);
-    ret = map_range_in_pgtbl(vmspace->pgtbl, va, pa, pm_size, vmr->perm);
+    ret = map_range_in_pgtbl(vmspace->pgtbl, va, pa, pm_size, vmr->perm, &rss);
+    vmspace->rss += rss;
     unlock(&vmspace->pgtbl_lock);
 
     return ret;
@@ -259,6 +261,8 @@ int vmspace_init(struct vmspace *vmspace, unsigned long pcid)
     reset_history_cpus(vmspace);
 
     vmspace->heap_vmr = NULL;
+    
+    vmspace->rss = 0;
 
     return 0;
 }
@@ -343,7 +347,7 @@ int vmspace_map_range(struct vmspace *vmspace, vaddr_t va, size_t len,
 out_free_vmr:
     free_vmregion(vmr);
 out_fail:
-    return ret;
+        return ret;
 }
 
 /*
@@ -362,13 +366,13 @@ int vmspace_unmap_range(struct vmspace *vmspace, vaddr_t va, size_t len)
     if (!vmr)
         goto out_unlock;
 
-    
+
     start = vmr->start;
     size = vmr->size;
     if ((va != start) || (len != size)) {
         kwarn("Only support unmapping a whole vmregion now.\n");
-        ret = -EINVAL;
-        goto out_unlock;
+            ret = -EINVAL;
+            goto out_unlock;
     }
 
     del_vmr_from_vmspace(vmspace, vmr);
@@ -376,8 +380,10 @@ int vmspace_unmap_range(struct vmspace *vmspace, vaddr_t va, size_t len)
 
     /* Remove the potential mappings in the page table. */
     if (len != 0) {
+        long rss = 0;
         lock(&vmspace->pgtbl_lock);
-        unmap_range_in_pgtbl(vmspace->pgtbl, va, len);
+        unmap_range_in_pgtbl(vmspace->pgtbl, va, len, &rss);
+        vmspace->rss += rss;
         unlock(&vmspace->pgtbl_lock);
         flush_tlb_by_range(vmspace, va, len);
     }

@@ -55,6 +55,9 @@ struct vmspace {
     unsigned char history_cpus[PLAT_CPU_NUM];
 
     struct vmregion *heap_vmr;
+
+    /* Records size of memory mapped. Protected by pgtbl_lock. */
+    unsigned long rss;
 };
 
 /* Interfaces on vmspace management */
