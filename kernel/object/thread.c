@@ -9,6 +9,7 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
+#include "object/memory.h"
 #include <common/kprint.h>
 #include <common/macro.h>
 #include <common/types.h>
@@ -126,100 +127,83 @@ char ROOT_NAME[] = "/procmgr.srv";
  */
 void create_root_thread(void)
 {
-    struct cap_group *root_cap_group;
-    cap_t thread_cap;
-    struct thread *root_thread;
-    char data[8];
-    unsigned long file_size;
-    unsigned long mem_size;
-    struct pmobject *pmo;
-    int ret;
-    cap_t stack_pmo_cap;
-    struct thread *thread;
-    struct pmobject *stack_pmo;
-    struct vmspace *init_vmspace;
-    vaddr_t stack;
-    vaddr_t kva;
-    struct process_metadata meta;
+        struct cap_group *root_cap_group;
+        cap_t thread_cap;
+        struct thread *root_thread;
+        char data[8];
+        int ret;
+        cap_t stack_pmo_cap;
+        struct thread *thread;
+        struct pmobject *stack_pmo;
+        struct vmspace *init_vmspace;
+        vaddr_t stack;
+        vaddr_t kva;
+        struct process_metadata meta;
 
-    /*
-     * Read from binary.
-     * The msg and the binary of of the init process(procmgr) are linked
-     * behind the kernel image via the incbine instruction.
-     * The binary_procmgr_bin_start points to the first piece of info:
-     * the entry point of the init process, followed by eight bytes of data
-     * that stores the mem_size of the binary.
-     */
-    memcpy(data, &binary_procmgr_bin_start, sizeof(data));
-    mem_size = (unsigned long)be64_to_cpu(*(u64 *)data);
+        /*
+         * Read from binary.
+         * The msg and the binary of of the init process(procmgr) are linked
+         * behind the kernel image via the incbin instruction.
+         * The binary_procmgr_bin_start points to the first piece of info:
+         * the entry point of the init process, followed by eight bytes of data
+         * that stores the mem_size of the binary.
+         */
 
-    memcpy(data,
-           (void *)((unsigned long)&binary_procmgr_bin_start + ROOT_ENTRY_OFF),
-           sizeof(data));
-    meta.entry = (unsigned long)be64_to_cpu(*(u64 *)data);
+        memcpy(data,
+               (void *)((unsigned long)&binary_procmgr_bin_start
+                        + ROOT_ENTRY_OFF),
+               sizeof(data));
+        meta.entry = (unsigned long)be64_to_cpu(*(u64 *)data);
 
-    memcpy(data,
-           (void *)((unsigned long)&binary_procmgr_bin_start + ROOT_FLAGS_OFF),
-           sizeof(data));
-    meta.flags = (unsigned long)be64_to_cpu(*(u64 *)data);
+        memcpy(data,
+               (void *)((unsigned long)&binary_procmgr_bin_start
+                        + ROOT_FLAGS_OFF),
+               sizeof(data));
+        meta.flags = (unsigned long)be64_to_cpu(*(u64 *)data);
 
-    memcpy(data,
-           (void *)((unsigned long)&binary_procmgr_bin_start
-                    + ROOT_PHENT_SIZE_OFF),
-           sizeof(data));
-    meta.phentsize = (unsigned long)be64_to_cpu(*(u64 *)data);
+        memcpy(data,
+               (void *)((unsigned long)&binary_procmgr_bin_start
+                        + ROOT_PHENT_SIZE_OFF),
+               sizeof(data));
+        meta.phentsize = (unsigned long)be64_to_cpu(*(u64 *)data);
 
-    memcpy(data,
-           (void *)((unsigned long)&binary_procmgr_bin_start + ROOT_PHNUM_OFF),
-           sizeof(data));
-    meta.phnum = (unsigned long)be64_to_cpu(*(u64 *)data);
+        memcpy(data,
+               (void *)((unsigned long)&binary_procmgr_bin_start
+                        + ROOT_PHNUM_OFF),
+               sizeof(data));
+        meta.phnum = (unsigned long)be64_to_cpu(*(u64 *)data);
 
-    memcpy(
-        data,
-        (void *)((unsigned long)&binary_procmgr_bin_start + ROOT_PHDR_ADDR_OFF),
-        sizeof(data));
-    meta.phdr_addr = (unsigned long)be64_to_cpu(*(u64 *)data);
+        memcpy(data,
+               (void *)((unsigned long)&binary_procmgr_bin_start
+                        + ROOT_PHDR_ADDR_OFF),
+               sizeof(data));
+        meta.phdr_addr = (unsigned long)be64_to_cpu(*(u64 *)data);
 
-    kdebug("%lx %lx %lx %lx %lx %lx\n",
-           mem_size,
-           meta.entry,
-           meta.flags,
-           meta.phentsize,
-           meta.phnum,
-           meta.phdr_addr);
-    file_size = (unsigned long)*(unsigned long *)&binary_procmgr_bin_size
-                - ROOT_BIN_HDR_SIZE;
 
-    root_cap_group = create_root_cap_group(ROOT_NAME, strlen(ROOT_NAME));
-    ret = create_pmo(
-        ROUND_UP(mem_size, PAGE_SIZE), PMO_DATA, root_cap_group, 0, &pmo);
-    BUG_ON(ret < 0);
-    memset((void *)phys_to_virt(pmo->start), 0, pmo->size);
-    memcpy((void *)phys_to_virt(pmo->start),
-           (void *)(((unsigned long)&binary_procmgr_bin_start)
-                    + ROOT_BIN_HDR_SIZE),
-           file_size);
+        root_cap_group = create_root_cap_group(ROOT_NAME, strlen(ROOT_NAME));
 
-    init_vmspace = obj_get(root_cap_group, VMSPACE_OBJ_ID, TYPE_VMSPACE);
-    obj_put(init_vmspace);
+        init_vmspace = obj_get(root_cap_group, VMSPACE_OBJ_ID, TYPE_VMSPACE);
 
-    /* Allocate and setup a user stack for the init thread */
-    stack_pmo_cap = create_pmo(
-        ROOT_THREAD_STACK_SIZE, PMO_ANONYM, root_cap_group, 0, &stack_pmo);
-    BUG_ON(stack_pmo_cap < 0);
+        /* Allocate and setup a user stack for the init thread */
+        stack_pmo_cap = create_pmo(ROOT_THREAD_STACK_SIZE,
+                                   PMO_ANONYM,
+                                   root_cap_group,
+                                   0,
+                                   &stack_pmo);
+        BUG_ON(stack_pmo_cap < 0);
 
-    ret = vmspace_map_range(init_vmspace,
-                            ROOT_THREAD_STACK_BASE,
-                            ROOT_THREAD_STACK_SIZE,
-                            VMR_READ | VMR_WRITE,
-                            stack_pmo);
-    BUG_ON(ret != 0);
+        ret = vmspace_map_range(init_vmspace,
+                                ROOT_THREAD_STACK_BASE,
+                                ROOT_THREAD_STACK_SIZE,
+                                VMR_READ | VMR_WRITE,
+                                stack_pmo);
+        BUG_ON(ret != 0);
 
-    /* Allocate the init thread */
-    thread = obj_alloc(TYPE_THREAD, sizeof(*thread));
-    BUG_ON(thread == NULL);
+        /* Allocate the init thread */
+        thread = obj_alloc(TYPE_THREAD, sizeof(*thread));
+        BUG_ON(thread == NULL);
 
-for (int i = 0; i < meta.phnum; i++) {
+        for (int i = 0; i < meta.phnum; i++) {
                 unsigned int flags;
                 unsigned long offset, vaddr, filesz, memsz;
 
@@ -258,23 +242,22 @@ for (int i = 0; i < meta.phnum; i++) {
                        sizeof(data));
                 memsz = (unsigned long)le64_to_cpu(*(u64 *)data);
 
-                printk("%s %d i: %d flags 0x%lx offset 0x%lx vaddr 0x%lx filesz 0x%lx memsz 0x%lx\n", __PRETTY_FUNCTION__, __LINE__, i, flags, offset, vaddr, filesz, memsz);
-
                 struct pmobject *segment_pmo;
-                ret = create_pmo(ROUND_UP(memsz, PAGE_SIZE),
+                size_t pmo_size = ROUND_UP(memsz, PAGE_SIZE);
+                ret = create_pmo(PAGE_SIZE,
                                  PMO_DATA,
                                  root_cap_group,
                                  0,
                                  &segment_pmo);
                 BUG_ON(ret < 0);
-                memset((void *)phys_to_virt(segment_pmo->start),
-                       0,
-                       segment_pmo->size);
-                memcpy((void *)phys_to_virt(segment_pmo->start),
-                       (void *)(((unsigned long)&binary_procmgr_bin_start)
-                                + ROOT_BIN_HDR_SIZE + offset),
-                       filesz);
-
+                vaddr_t segment_content_kvaddr = ((unsigned long)&binary_procmgr_bin_start) + offset;
+                
+                BUG_ON(filesz != memsz);
+                // No additional memory for .bss, so we can directly reuse
+                // content in kernel image as their physical pages
+                kfree((void *)phys_to_virt(segment_pmo->start));
+                segment_pmo->start = virt_to_phys(segment_content_kvaddr);
+                segment_pmo->size = pmo_size;
                 unsigned vmr_flags = 0;
                 if (flags & PHDR_FLAGS_R)
                         vmr_flags |= VMR_READ;
@@ -289,45 +272,48 @@ for (int i = 0; i < meta.phnum; i++) {
                                         vmr_flags,
                                         segment_pmo);
                 BUG_ON(ret < 0);
+
         }
-    stack = ROOT_THREAD_STACK_BASE + ROOT_THREAD_STACK_SIZE;
+        obj_put(init_vmspace);
 
-    /* Allocate a physical for the main stack for prepare_env */
-    kva = (vaddr_t)get_pages(0);
-    BUG_ON(kva == 0);
-    commit_page_to_pmo(stack_pmo,
-                       ROOT_THREAD_STACK_SIZE / PAGE_SIZE - 1,
-                       virt_to_phys((void *)kva));
+        stack = ROOT_THREAD_STACK_BASE + ROOT_THREAD_STACK_SIZE;
 
-    prepare_env((char *)kva, stack, ROOT_NAME, &meta);
-    stack -= ENV_SIZE_ON_STACK;
+        /* Allocate a physical page for the main stack for prepare_env */
+        kva = (vaddr_t)get_pages(0);
+        BUG_ON(kva == 0);
+        commit_page_to_pmo(stack_pmo,
+                           ROOT_THREAD_STACK_SIZE / PAGE_SIZE - 1,
+                           virt_to_phys((void *)kva));
 
-    ret = thread_init(thread,
-                      root_cap_group,
-                      stack,
-                      meta.entry,
-                      ROOT_THREAD_PRIO,
-                      TYPE_USER,
-                      smp_get_cpu_id());
-    BUG_ON(ret != 0);
+        prepare_env((char *)kva, stack, ROOT_NAME, &meta);
+        stack -= ENV_SIZE_ON_STACK;
 
-    /* Add the thread into the thread_list of the cap_group */
-    lock(&root_cap_group->threads_lock);
-    list_add(&thread->node, &root_cap_group->thread_list);
-    root_cap_group->thread_cnt += 1;
-    unlock(&root_cap_group->threads_lock);
+        ret = thread_init(thread,
+                          root_cap_group,
+                          stack,
+                          meta.entry,
+                          ROOT_THREAD_PRIO,
+                          TYPE_USER,
+                          smp_get_cpu_id());
+        BUG_ON(ret != 0);
 
-    /* Allocate the cap for the init thread */
-    thread_cap = cap_alloc(root_cap_group, thread);
-    BUG_ON(thread_cap < 0);
+        /* Add the thread into the thread_list of the cap_group */
+        lock(&root_cap_group->threads_lock);
+        list_add(&thread->node, &root_cap_group->thread_list);
+        root_cap_group->thread_cnt += 1;
+        unlock(&root_cap_group->threads_lock);
 
-    /* L1 icache & dcache have no coherence on aarch64 */
-    flush_idcache();
+        /* Allocate the cap for the init thread */
+        thread_cap = cap_alloc(root_cap_group, thread);
+        BUG_ON(thread_cap < 0);
 
-    root_thread = obj_get(root_cap_group, thread_cap, TYPE_THREAD);
-    /* Enqueue: put init thread into the ready queue */
-    BUG_ON(sched_enqueue(root_thread));
-    obj_put(root_thread);
+        /* L1 icache & dcache have no coherence on aarch64 */
+        flush_idcache();
+
+        root_thread = obj_get(root_cap_group, thread_cap, TYPE_THREAD);
+        /* Enqueue: put init thread into the ready queue */
+        BUG_ON(sched_enqueue(root_thread));
+        obj_put(root_thread);
 }
 
 static cap_t create_thread(struct cap_group *cap_group, vaddr_t stack,

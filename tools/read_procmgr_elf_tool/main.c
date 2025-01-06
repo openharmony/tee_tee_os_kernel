@@ -66,15 +66,6 @@ void get_elf_info(const char *binary, struct elf_info *info)
     info->phnum = elf->header.e_phnum;
     info->phdr_addr = elf->p_headers[0].p_vaddr + elf->header.e_phoff;
 
-    /*
-     * first section will start at the beginning of the stripped ELF file
-     * so the file offsets need to be adjusted accordingly
-     */
-    offset = elf->p_headers[0].p_offset;
-    for (int i = 0; i < 3; i++) {
-        info->phdr[i].p_offset -= offset;
-    }
-
     free(elf);
 }
 
