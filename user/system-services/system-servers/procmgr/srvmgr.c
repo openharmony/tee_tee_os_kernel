@@ -71,6 +71,11 @@ void set_tmpfs_cap(cap_t cap)
     sys_servers[SERVER_TMPFS] = cap;
 }
 
+void set_chanmgr_cap(cap_t cap)
+{
+    sys_servers[SERVER_CHANMGR] = cap;
+}
+
 /* Return proc_node of new process */
 static struct proc_node *
 do_launch_process(int argc, char **argv, char *name, bool if_has_parent,
