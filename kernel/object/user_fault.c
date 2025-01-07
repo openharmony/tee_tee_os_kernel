@@ -143,6 +143,7 @@ int sys_user_fault_map(badge_t client_badge, vaddr_t fault_va, vaddr_t remap_va,
     void *new_page;
     int ret;
     bool page_allocated = false;
+    long rss = 0;
 
     current_pool = get_current_fault_pool();
 
@@ -216,7 +217,8 @@ int sys_user_fault_map(badge_t client_badge, vaddr_t fault_va, vaddr_t remap_va,
     lock(&fault_vmspace->pgtbl_lock);
     
     ret = map_range_in_pgtbl(
-        fault_vmspace->pgtbl, fault_va, new_pa, PAGE_SIZE, perm);
+        fault_vmspace->pgtbl, fault_va, new_pa, PAGE_SIZE, perm, &rss);
+    fault_vmspace->rss += rss;
     BUG_ON(ret);
     unlock(&fault_vmspace->pgtbl_lock);
 

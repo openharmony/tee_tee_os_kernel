@@ -33,7 +33,7 @@ void parse_mem_map(void *info)
 {
     extern char img_end;
 
-    secure_ddr_region(1, 0x8400000, 0x8400000 + 0x4000000);
+    secure_ddr_region(1, get_tzdram_start(), get_tzdram_end());
 
     physmem_map_num = 1;
     physmem_map[0][0] = ROUND_UP((paddr_t)&img_end, PAGE_SIZE);
@@ -45,8 +45,8 @@ void parse_mem_map(void *info)
     struct tag_tos_mem tag_tos_mem;
     memset(&tag_tos_mem, 0, sizeof(tag_tos_mem));
     memcpy(tag_tos_mem.tee_mem.name, "tee.mem", 8);
-    tag_tos_mem.tee_mem.phy_addr = 0x8400000UL;
-    tag_tos_mem.tee_mem.size = 0x4000000UL;
+    tag_tos_mem.tee_mem.phy_addr = get_tzdram_start();
+    tag_tos_mem.tee_mem.size = get_tzdram_end() - get_tzdram_start();
     tag_tos_mem.tee_mem.flags = 1;
     memcpy(tag_tos_mem.drm_mem.name, "drm.mem", 8);
     tag_tos_mem.drm_mem.phy_addr = 0;

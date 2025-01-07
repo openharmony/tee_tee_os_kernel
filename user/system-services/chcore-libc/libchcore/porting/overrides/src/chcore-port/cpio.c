@@ -92,6 +92,34 @@ static void cpio_add_file(struct cpio_file *f)
     g_files.tail = f;
 }
 
+void cpio_free_g_files(void)
+{
+        struct cpio_file *f, *next;
+
+        f = g_files.head.next;
+        if (f) {
+            next = f->next;
+        } else {
+            return;
+        }
+
+        for (;;) {
+            free(f);
+            f = next;
+            if (next) {
+                next = next->next;
+            }
+
+            if (!f) {
+                break;
+            }
+        }
+
+        // to keep the list head represented by g_files
+        // consistent
+        cpio_init_g_files();
+}
+
 void cpio_extract(const void *addr, const char *dirat)
 {
     const char *p = addr;

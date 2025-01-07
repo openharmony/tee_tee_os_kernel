@@ -15,9 +15,14 @@ void teeos_cfg_init(paddr_t start_pa)
 {
 }
 
+paddr_t get_tzdram_start(void)
+{
+    return 0x8400000;
+}
+
 paddr_t get_tzdram_end(void)
 {
-    return 0x8400000 + 0x4000000;
+    return 0x8400000 + 0x1c00000;
 }
 
 paddr_t get_gicd_base(void)

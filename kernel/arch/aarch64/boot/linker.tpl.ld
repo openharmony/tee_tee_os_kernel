@@ -38,6 +38,8 @@ SECTIONS
 
     .rodata : {
         *(.rodata*)
+        . = ALIGN(4K);
+        ${incbin_linker_script}
     }
     . = ALIGN(4K);
     _edata = . - KERNEL_VADDR;

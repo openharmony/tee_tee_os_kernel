@@ -26,6 +26,7 @@ extern void parse_mem_map(void *);
 void mm_init(void *physmem_info);
 
 /* Return the size of free memory in the buddy and slab allocator. */
+unsigned long get_total_mem_size(void);
 unsigned long get_free_mem_size(void);
 
 /* Implementations differ on different architectures. */
