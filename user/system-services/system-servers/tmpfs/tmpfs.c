@@ -15,6 +15,7 @@
 #include "fs_vnode.h"
 #include "pthread.h"
 #include "sys/stat.h"
+#include "sys/mman.h"
 #include <chcore/container/radix.h>
 #include <fs_wrapper_defs.h>
 #include <chcore/falloc.h>
@@ -688,7 +689,7 @@ vaddr_t tmpfs_get_page_addr(void *operator, off_t offset)
 
     /* the case of truncated to a larger size but not yet allocated */
     if (!page && offset < inode->size) {
-        page = aligned_alloc(PAGE_SIZE, PAGE_SIZE);
+        page = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
         if (!page) {
             return -ENOMEM;
         }

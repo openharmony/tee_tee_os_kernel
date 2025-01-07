@@ -32,23 +32,15 @@
     (((u64)(be32_to_cpu(*((u32 *)(x) + 1)))) << 32 \
      | (be32_to_cpu(*((u32 *)(x)) + 2)))
 
-struct elf_info {
-    u64 mem_size;
-    u64 entry;
-    u64 flags;
-    u64 phentsize;
-    u64 phnum;
-    u64 phdr_addr;
-};
-
 void get_elf_info(const char *binary, struct elf_info *info)
 {
     struct elf_file *elf;
     int i;
     u64 size = 0;
+    u64 offset;
     u64 min_vaddr, max_vaddr;
 
-    elf = elf_parse_file(binary);
+    elf = elf_parse_file(binary, info);
     if (!elf) {
         printf("parse elf fail\n");
         return;
@@ -73,6 +65,7 @@ void get_elf_info(const char *binary, struct elf_info *info)
     info->phentsize = elf->header.e_phentsize;
     info->phnum = elf->header.e_phnum;
     info->phdr_addr = elf->p_headers[0].p_vaddr + elf->header.e_phoff;
+
     free(elf);
 }
 

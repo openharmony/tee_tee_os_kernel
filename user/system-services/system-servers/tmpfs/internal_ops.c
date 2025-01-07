@@ -27,6 +27,7 @@
 #include "chcore/container/list.h"
 #include "dirent.h"
 #include "sys/stat.h"
+#include "sys/mman.h"
 #include <chcore/error.h>
 #include <chcore/falloc.h>
 #include <chcore/container/radix.h>
@@ -49,9 +50,13 @@ struct symlink_ops symlink_ops;
 void debug_radix_free(void *page)
 {
     tmpfs_revoke_mem_usage(page, DATA_PAGE);
-    free(page);
+    munmap_page(page);
 }
 #endif
+
+void munmap_page(void *page) {
+        munmap(page, PAGE_SIZE);
+}
 
 /* string utils */
 u64 hash_chars(const char *str, size_t len)
@@ -181,7 +186,7 @@ struct inode *tmpfs_inode_init(int type, mode_t mode)
 #if DEBUG_MEM_USAGE
         init_radix_w_deleter(&inode->data, debug_radix_free);
 #else
-        init_radix_w_deleter(&inode->data, free);
+        init_radix_w_deleter(&inode->data, munmap_page);
 #endif
         break;
     case FS_DIR:
@@ -416,7 +421,7 @@ static ssize_t tmpfs_file_write(struct inode *reg, const char *buff, size_t len,
 
         page = radix_get(&reg->data, page_no);
         if (!page) {
-            page = aligned_alloc(PAGE_SIZE, PAGE_SIZE);
+            page = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
             if (!page)
                 return (ssize_t)(cur_off - offset);
 
@@ -477,7 +482,7 @@ static int tmpfs_file_truncate(struct inode *reg, off_t len)
 #if DEBUG_MEM_USAGE
         init_radix_w_deleter(&reg->data, debug_radix_free);
 #else
-        init_radix_w_deleter(&reg->data, free);
+        init_radix_w_deleter(&reg->data, munmap_page);
 #endif
         reg->size = 0;
     } else if (len > reg->size) {
@@ -662,7 +667,7 @@ static int tmpfs_file_zero_range(struct inode *reg, off_t offset, off_t len,
             to_zero = PAGE_SIZE;
         page = radix_get(&reg->data, page_no);
         if (!page) {
-            page = aligned_alloc(PAGE_SIZE, PAGE_SIZE);
+            page = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
             if (!page)
                 return -ENOSPC;
 #if DEBUG_MEM_USAGE
@@ -774,7 +779,7 @@ static int tmpfs_file_allocate(struct inode *reg, off_t offset, off_t len,
 
         page = radix_get(&reg->data, page_no);
         if (!page) {
-            page = aligned_alloc(PAGE_SIZE, PAGE_SIZE);
+            page = mmap(NULL, PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
             if (!page)
                 return -ENOSPC;
 #if DEBUG_MEM_USAGE
@@ -785,7 +790,7 @@ static int tmpfs_file_allocate(struct inode *reg, off_t offset, off_t len,
 #if DEBUG_MEM_USAGE
                 tmpfs_revoke_mem_usage(page, DATA_PAGE);
 #endif
-                free(page);
+                munmap_page(page);
                 return -ENOSPC;
             }
             memset(page, 0, PAGE_SIZE);

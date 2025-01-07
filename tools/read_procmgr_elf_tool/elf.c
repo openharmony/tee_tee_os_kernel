@@ -274,7 +274,7 @@ void elf_free(struct elf_file *elf)
     free(elf);
 }
 
-struct elf_file *elf_parse_file(const char *code)
+struct elf_file *elf_parse_file(const char *code, struct elf_info*info)
 {
     struct elf_file *elf;
     int err;
@@ -290,10 +290,11 @@ struct elf_file *elf_parse_file(const char *code)
 
     /* Allocate memory for program headers and section headers */
     err = -ENOMEM;
-    elf->p_headers = malloc(elf->header.e_phentsize * elf->header.e_phnum);
+    elf->p_headers = malloc(sizeof(struct elf_program_header) * elf->header.e_phnum);
+
     if (!elf->p_headers)
         goto out_free_elf;
-    elf->s_headers = malloc(elf->header.e_shentsize * elf->header.e_shnum);
+    elf->s_headers = malloc(sizeof(struct elf_section_header) * elf->header.e_shnum);
     if (!elf->s_headers)
         goto out_free_elf_p;
 
@@ -303,6 +304,7 @@ struct elf_file *elf_parse_file(const char *code)
                                            + elf->header.e_phentsize * i,
                                        &elf->header,
                                        &elf->p_headers[i]);
+        info->phdr[i] = elf->p_headers[i];
         if (err)
             goto out_free_all;
     }

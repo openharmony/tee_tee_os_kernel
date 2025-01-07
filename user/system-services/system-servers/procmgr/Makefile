@@ -41,9 +41,10 @@ procmgr.srv: linker.ld $(OBJS)
 procmgr.bin: procmgr.srv
 	$(Q)$(OBJCOPY) -O binary -S $< $@
 
-procmgr: procmgr.srv procmgr.bin read_procmgr_elf_tool
+procmgr: procmgr.srv read_procmgr_elf_tool
 	$(Q)./read_procmgr_elf_tool procmgr.srv
-	$(Q)cat elf_info.temp procmgr.bin > procmgr
+	$(Q)cp procmgr.srv procmgr
+	$(Q)exec 3<>procmgr && cat elf_info.temp >&3
 	$(Q)rm -f elf_info.temp
 
 clean:

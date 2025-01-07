@@ -158,7 +158,17 @@ struct elf_file {
     struct elf_section_header *s_headers;
 };
 
-struct elf_file *elf_parse_file(const char *code);
+struct elf_info {
+  u64 mem_size;
+  u64 entry;
+  u64 flags;
+  u64 phentsize;
+  u64 phnum;
+  u64 phdr_addr;
+  struct elf_program_header phdr[3]; /* currently 3 segments for procmgr */
+};
+
+struct elf_file *elf_parse_file(const char *code, struct elf_info*info);
 void elf_free(struct elf_file *elf);
 
 #ifdef __cplusplus
