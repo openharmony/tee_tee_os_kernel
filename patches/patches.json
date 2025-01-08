@@ -4,6 +4,12 @@
             "project":"vendor_hihope",
             "path":"vendor/hihope",
             "pr_url":"https://gitee.com/openharmony/vendor_hihope/pulls/1250"
+        },
+    	{
+            "project":"interface_sdk_c",
+            "path":"interface/sdk_c",
+            "pr_url":"https://gitee.com/openharmony/interface_sdk_c/pulls/2283"
         }
+
     ]
 }
