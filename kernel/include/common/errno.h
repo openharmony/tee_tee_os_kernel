@@ -13,8 +13,6 @@
 #ifndef COMMON_ERRNO_H
 #define COMMON_ERRNO_H
 
-/* GPL-2.0 WITH Linux-syscall-note */
-
 #define EPERM   1 /* Operation not permitted */
 #define ENOENT  2 /* No such file or directory/Entry does not exist */
 #define ESRCH   3 /* No such process */
