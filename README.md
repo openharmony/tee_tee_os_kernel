@@ -1,8 +1,14 @@
 # tee_tee_os_kernel 仓介绍 #
 
-tee_tee_os_kernel 部件主要包含 TEE 的内核部分，采用微内核架构设计。
+## 简介 ##
 
-### 一、tee_tee_os_kernel 部件模块划分 ###
+OpenTrustee提供了一个可信执行环境（Trusted Execution Environment，TEE），运行在受硬件隔离的安全区域中。OpenTrustee是一套完整的TEE解决方案，包含多个部件，系统架构如图所示：
+
+![](figures/overview-of-opentrustee.png)
+
+tee_tee_os_kernel 部件主要包含 OpenTrustee 的内核部分，采用微内核架构设计。
+
+## tee_tee_os_kernel 部件模块划分 ##
 <table>
 <th>子模块名称</th>
 <th>模块简介</th>
@@ -33,7 +39,7 @@ tee_tee_os_kernel 部件主要包含 TEE 的内核部分，采用微内核架构
 
 </table>
 
-### 二、tee_tee_os_kernel 部件代码目录结构 ###
+### tee_tee_os_kernel 部件代码目录结构 ###
 ```
 base/tee/tee_os_kernel
 ├── kernel
@@ -58,22 +64,15 @@ base/tee/tee_os_kernel
     └── tmpfs
 ```
 
-### 三、tee_tee_os_kernel 构建指导 ###
-
-1. TEEOS内核代码位置：`base/tee/tee_os_kernel`
-
-2. TEEOS框架代码位置：`base/tee/tee_os_framework`
-
-3. 切换目录至OpenHarmony源码根目录，输入以下指令进入Docker构建环境
-
-```Bash
-docker run -it --rm -v $(pwd):$(pwd) -w $(pwd) swr.cn-south-1.myhuaweicloud.com/openharmony-docker/docker_oh_full:3.2 bash
-```
-
-4. 输入以下指令构建杨帆开发板TEEOS
+## tee_tee_os_kernel 构建指导 ##
+tee_tee_os_framework与tee_tee_os_kernel共同构建TEEOS，单独构建命令如下：
 
 ```Bash
 ./build.sh --product-name rk3568 --build-target tee --ccache
 ```
 
-5. 构建产物为TEEOS镜像：`base/tee/tee_os_kernel/kernel/bl32.bin`
+构建产物为TEEOS镜像：`base/tee/tee_os_kernel/kernel/bl32.bin`
+
+## 相关仓
+
+[tee_os_framework](https://gitcode.com/openharmony-sig/tee_tee_os_framework)

@@ -18,8 +18,6 @@
 extern "C" {
 #endif
 
-/* Spec from https://man.openbsd.org/FreeBSD-12.0/cpio.5 */
-
 struct cpio_newc_header {
     char c_magic[6];
     char c_ino[8];

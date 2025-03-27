@@ -24,6 +24,6 @@ function copy_tee_source()
     cp -arf ${OH_TOP_DIR}/base/tee/tee_os_framework ${TEE_SRC_TMP_PATH}/
 }
 
-copy_tee_source
+#copy_tee_source
 
-${TEE_BUILD_PATH}/build_tee.sh ${OH_TOP_DIR} ${TEE_OS_KERNEL_TMP_DIR} ${TEE_FRAMEWORK_TMP_DIR}
+#${TEE_BUILD_PATH}/build_tee.sh ${OH_TOP_DIR} ${TEE_OS_KERNEL_TMP_DIR} ${TEE_FRAMEWORK_TMP_DIR}
