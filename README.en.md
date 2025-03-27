@@ -1,8 +1,14 @@
 # tee_tee_os_kernel #
 
-The tee_tee_os_kernel component mainly contains the kernel part of TEE, which is designed based on the microkernel architecture.
+## Introduction ##
 
-### 1. The specific module introduction of tee_tee_os_kernel ###
+OpenTrustee provides a Trusted Execution Environment (TEE) that runs in a secure area isolated by hardware. OpenTrustee is a complete TEE solution that includes multiple components. The system architecture is shown in the figure below:
+
+![](figures/overview-of-opentrustee.png)
+
+The tee_tee_os_kernel component mainly includes the kernel part of OpenTrustee, designed using a microkernel architecture.
+
+## The specific module introduction of tee_tee_os_kernel ##
 <table>
 <th> Name of module </th>
 <th> Introduction </th>
@@ -33,7 +39,7 @@ The tee_tee_os_kernel component mainly contains the kernel part of TEE, which is
 
 </table>
 
-### 2. tee_tee_os_kernel code directories ###
+## tee_tee_os_kernel code directories ##
 ```
 base/tee/tee_os_kernel
 ├── kernel
@@ -58,22 +64,16 @@ base/tee/tee_os_kernel
     └── tmpfs
 ```
 
-### 3. tee_tee_os_kernel building guide ###
+## tee_tee_os_kernel building guide ##
 
-1. TEEOS kernel code location: `base/tee/tee_os_kernel`
- 
-2. TEEOS framework code location: `base/tee/tee_os_framework`
-
-3. Change the directory to the root directory of the OpenHarmony source code, and enter the following command to enter the Docker building environment:
-
-```Bash
-docker run -it --rm -v $(pwd):$(pwd) -w $(pwd) swr.cn-south-1.myhuaweicloud.com/openharmony-docker/docker_oh_full:3.2 bash
-```
-
-4. Enter the following command to build TEEOS for the Yangfan board:
+The tee_tee_os_framework and tee_tee_os_kernel work together to build TEEOS, and the commands for building them separately are as follows:
 
 ```Bash
 ./build.sh --product-name rk3568 --build-target tee --ccache
 ```
 
-5. The product is the TEEOS image: `base/tee/tee_os_kernel/kernel/bl32.bin`
+Build the product as a TEEOS image:` base/tee/tee_os_kernel/kernel/bl32.bin`
+
+## Related code repositories ##
+
+[tee_os_framework](https://gitcode.com/openharmony-sig/tee_tee_os_framework)
