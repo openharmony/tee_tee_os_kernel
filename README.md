@@ -75,4 +75,4 @@ tee_tee_os_framework与tee_tee_os_kernel共同构建TEEOS，单独构建命令�
 
 ## 相关仓
 
-[tee_os_framework](https://gitcode.com/openharmony-sig/tee_tee_os_framework)
+[tee_os_framework](https://gitcode.com/openharmony/tee_tee_os_framework)
