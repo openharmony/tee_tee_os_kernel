@@ -76,4 +76,4 @@ Build the product as a TEEOS image:` base/tee/tee_os_kernel/kernel/bl32.bin`
 
 ## Related code repositories ##
 
-[tee_os_framework](https://gitcode.com/openharmony-sig/tee_tee_os_framework)
+[tee_os_framework](https://gitcode.com/openharmony/tee_tee_os_framework)
