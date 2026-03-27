@@ -624,7 +624,8 @@ void update_pte(pte_t *dest, unsigned int level, struct common_pte_t *src)
 
         dest->l3_page.is_valid = src->valid;
 #if !(defined(CHCORE_PLAT_RASPI3) || defined(CHCORE_PLAT_RASPI4) \
-      || defined(CHCORE_PLAT_RK3399) || defined(CHCORE_PLAT_RK3568))
+    || defined(CHCORE_PLAT_RK3399) || defined(CHCORE_PLAT_RK3568) \
+    || defined(CHCORE_PLAT_RK3588))
         /**
          * Raspberry Pi platform does not support setting AF and DBM
          * by hardware, so on these platforms we ignored them.
