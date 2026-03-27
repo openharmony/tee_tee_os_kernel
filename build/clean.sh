@@ -23,7 +23,7 @@ OH_TEE_FRAMEWORK_DIR=${CHCORE_DIR}/../tee_os_framework/
 THIRD_PARTY=${OH_TOP_DIR}/third_party/
 
 # framework output dir
-rm -rf oh_tee
+rm -rf ../oh_tee
 
 # clean kernel build outputs
 cd ${CHCORE_DIR}
