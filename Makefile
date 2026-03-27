@@ -113,9 +113,13 @@ CRT_OBJS = $(filter $(srcdir)/obj/crt/%,$(ALL_OBJS))
 AOBJS = $(LIBC_OBJS)
 LOBJS = $(LIBC_OBJS:.o=.lo)
 CFLAGS_ALL = -std=c99 -ffreestanding -nostdinc -D_XOPEN_SOURCE=700 -Os -pipe
+
+CLANG_VER := $(shell $(CHCORE_COMPILER_DIR)/bin/$(CHCORE_COMPILER) --version | sed -n '1s/.*version \([0-9][0-9.]*\).*/\1/p')
+CLANG_RT_DIR := $(CHCORE_COMPILER_DIR)/lib/clang/$(CLANG_VER)/lib/aarch64-linux-ohos
+
 libc_shared: libc libohtee.so $(SECURE_FUNCTION_OBJ_DIR) $(SECURE_FUNCTION_OBJS) 
 	${CHCORE_COMPILER_DIR}/bin/${CHCORE_COMPILER} --target=aarch64-linux-gnu -fuse-ld=lld $(CFLAGS_ALL) -nostdlib -shared \
-	-Wl,-e,_dlstart -o libc_shared.so $(LOBJS) $(LDSO_OBJS) -L${CHCORE_COMPILER_DIR}/lib/clang/current/lib/aarch64-linux-ohos/ -lclang_rt.builtins $(SECURE_FUNCTION_OBJS) $(LIB_OHTEE_OBJS) 
+	-Wl,-e,_dlstart -o libc_shared.so $(LOBJS) $(LDSO_OBJS) -L${CLANG_RT_DIR} -lclang_rt.builtins $(SECURE_FUNCTION_OBJS) $(LIB_OHTEE_OBJS) 
 	$(shell mkdir -p ramdisk-dir)
 	$(Q)cp libc_shared.so ramdisk-dir
 
