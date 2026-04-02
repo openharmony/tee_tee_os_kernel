@@ -26,7 +26,7 @@ BEGIN_FUNC(smc_call)
 	msr 	ttbr0_el1, x5
 	isb
 
-        smc     #0
+    smc     #0
 END_FUNC(smc_call)
 
 BEGIN_FUNC(yield_smc_entry)
