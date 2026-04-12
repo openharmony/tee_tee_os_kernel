@@ -81,8 +81,7 @@ static inline void gic_wait_dist_complete(void)
 
 void gicv3_distributor_init(void)
 {
-	unsigned int gic_type_reg, i, val;
-	unsigned long cpumask;
+	unsigned int gic_type_reg, val;
 
 	gic_type_reg = get32(GICD_TYPER);
 	nr_lines = GICD_TYPER_IRQS(gic_type_reg);
@@ -120,7 +119,7 @@ static void gicv3_init_cpu_interface(void)
 static void gicv3_redistributor_init(void)
 {
 	unsigned int gic_wake_reg;
-	unsigned long redis_base, sgi_base;
+	unsigned long redis_base;
 
 	redis_base = GICR_PER_CPU_BASE(smp_get_cpu_id());
 
@@ -155,8 +154,6 @@ int gicv3_set_irq_group(int irq, int ns)
 
 void gicv3_enable_irqno(int irq)
 {
-	int cpu_id;
-
 	if (irq < 32) {
 		BUG_ON(1);
 	} else {

@@ -34,8 +34,10 @@ static pthread_mutex_t dparts_lock = PTHREAD_MUTEX_INITIALIZER;
 /* whether fill the 'dparts' */
 static bool dparts_inited = false;
 
+__attribute__((unused))
 static void initialize_dparts(void)
 {
+    (void)dparts_inited;
     memcpy(dparts[0].device_name, "sda1", 5);
     memcpy(dparts[1].device_name, "sda2", 5);
     memcpy(dparts[2].device_name, "sda3", 5);
