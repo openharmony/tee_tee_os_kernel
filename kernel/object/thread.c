@@ -566,7 +566,9 @@ int sys_terminate_thread(cap_t thread_cap)
 {
     struct thread *thread;
     int ret = 0;
+#ifdef CHCORE_KERNEL_RT
     int cpu;
+#endif
     s32 old_exit_state;
 
     if (thread_cap == 0) {
@@ -590,12 +592,19 @@ int sys_terminate_thread(cap_t thread_cap)
         lock(&(current_cap_group->threads_lock));
         current_cap_group->thread_cnt--;
         unlock(&(current_cap_group->threads_lock));
-    }
 
-    for (cpu = 0; cpu < PLAT_CPU_NUM; cpu++) {
-        if (cpu != (int)smp_get_cpu_id()) {
+#ifdef CHCORE_KERNEL_RT
+        /*
+         * This path belongs to the RT pending-resched mechanism. PBRR does not
+         * consume resched_bitmaps, so keep it compiled out for the normal
+         * OH-TEE scheduler.
+         */
+        for (cpu = 0; cpu < PLAT_CPU_NUM; cpu++) {
+            if (cpu == (int)smp_get_cpu_id() || cpu_status[cpu] != cpu_run)
+                continue;
             send_ipi(cpu, IPI_RESCHED);
         }
+#endif /* CHCORE_KERNEL_RT */
     }
 
     obj_put(thread);
