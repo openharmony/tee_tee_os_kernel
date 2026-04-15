@@ -510,12 +510,14 @@ int sys_cap_group_recycle(cap_t cap_group_cap)
              */
             if (thread->thread_ctx->type == TYPE_SHADOW) {
                 thread->thread_ctx->thread_exit_state = TE_EXITED;
+                thread->thread_ctx->state = TS_EXIT;
                 continue;
             }
 
             if (thread->thread_ctx->state == TS_WAITING) {
                 try_remove_timeout(thread);
                 thread->thread_ctx->thread_exit_state = TE_EXITED;
+                thread->thread_ctx->state = TS_EXIT;
                 continue;
             }
 
