@@ -26,9 +26,6 @@
 #define GTASK_TID    (0xa)
 #define GTASK_TASKID (pid_to_taskid(GTASK_TID, GTASK_PID))
 
-#define mem_info(fmt, ...) \
-    printf("<%s:%d>: " fmt, __func__, __LINE__, ##__VA_ARGS__)
-
 static cap_t __task_map_ns(uint32_t task_id, uint64_t phy_addr, uint32_t size)
 {
     ipc_msg_t *ipc_msg;
@@ -267,8 +264,6 @@ int32_t task_map_ns_phy_mem(uint32_t task_id, uint64_t phy_addr, uint32_t size,
                             uint64_t *info)
 {
     cap_t pmo;
-
-    mem_info("%x %lx %x %p\n", task_id, phy_addr, size, info);
 
     if (task_id == 0) {
         task_id = GTASK_TASKID;
