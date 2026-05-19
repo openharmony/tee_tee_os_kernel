@@ -99,7 +99,7 @@ do_launch_process(int argc, char **argv, char *name, bool if_has_parent,
         parent_proc_node = NULL;
     }
 
-    debug("client: %p, cmd: %s\n", parent_proc_node, argv[1]);
+    debug("client: %p, cmd: %s\n", parent_proc_node, argv[0]);
     debug("fsm ipc_struct conn_cap=%d server_type=%d\n",
           fsm_ipc_struct->conn_cap,
           fsm_ipc_struct->server_id);
