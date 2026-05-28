@@ -51,7 +51,16 @@
         <policylist>
             <policy name="projectPolicy" desc="tee_os_kernel code">
                 <policyitem type="license" name="MulanPSL-2.0" path=".*" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="Mulan PSL v2 license"/>
+                <policyitem type="license" name="GPL-2.0-only" path=".*user/system-services/chcore-libc/libchcore/porting/overrides/src/chcore-port/npu_hw.h" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="RKNPU GPL license"/>
+                <policyitem type="license" name="GPL-2.0-only" path=".*user/system-services/chcore-libc/libchcore/porting/overrides/src/chcore-port/npu_cna.h" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="RKNPU GPL license"/>
+                <policyitem type="license" name="GPL-2.0-only" path=".*user/system-services/chcore-libc/libchcore/porting/overrides/src/chcore-port/npu_dpu.h" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="RKNPU GPL license"/>
+                <policyitem type="license" name="GPL-2.0" path=".*user/system-services/chcore-libc/libchcore/porting/overrides/src/chcore-port/rknpu-ioctl.h" rule="may" group="defaultGroup" filefilter="defaultPolicyFilter" desc="RKNPU ioctl GPL-2.0 license"/>
                 <policyitem type="copyright" name="Institute of Parallel And Distributed Systems (IPADS), Shanghai Jiao Tong University (SJTU)" path=".*" rule="may" group="defaultGroup" filefilter="copyrightPolicyFilter" desc="copyright information"/>
+                <policyitem type="copyright" name="Copyright (C) 2024  Jasbir Matharu, &lt;jasjnuk@gmail.com&gt;" path=".*user/system-services/chcore-libc/libchcore/porting/overrides/src/chcore-port/npu_hw.h" rule="may" group="defaultGroup" filefilter="copyrightPolicyFilter" desc="RKNPU copyright information"/>
+                <policyitem type="copyright" name="Copyright (C) 2024  Jasbir Matharu, &lt;jasjnuk@gmail.com&gt;" path=".*user/system-services/chcore-libc/libchcore/porting/overrides/src/chcore-port/npu_cna.h" rule="may" group="defaultGroup" filefilter="copyrightPolicyFilter" desc="RKNPU copyright information"/>
+                <policyitem type="copyright" name="Copyright (C) 2024  Jasbir Matharu, &lt;jasjnuk@gmail.com&gt;" path=".*user/system-services/chcore-libc/libchcore/porting/overrides/src/chcore-port/npu_dpu.h" rule="may" group="defaultGroup" filefilter="copyrightPolicyFilter" desc="RKNPU copyright information"/>
+                <policyitem type="copyright" name="Rockchip Electronics Co.Ltd" path=".*user/system-services/chcore-libc/libchcore/porting/overrides/src/chcore-port/rknpu-ioctl.h" rule="may" group="defaultGroup" filefilter="copyrightPolicyFilter" desc="Rockchip copyright information"/>
+                <policyitem type="copyright" name="InvalidCopyright" path=".*user/system-services/chcore-libc/libchcore/porting/overrides/src/chcore-port/rknpu-ioctl.h" rule="may" group="defaultGroup" filefilter="copyrightPolicyFilter" desc="Rockchip copyright header without year"/>
             </policy>
         </policylist>
         <filefilterlist>
