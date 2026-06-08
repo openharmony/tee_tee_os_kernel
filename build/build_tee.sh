@@ -41,6 +41,15 @@ if [[ -z "${CHCORE_PLAT}" ]]; then
     echo "failed to get CHCORE_PLAT from ${CONFIG_MK}"
     exit 1
 fi
+CHCORE_LLM=$(sed -n 's/^[[:space:]]*CHCORE_LLM[[:space:]]*=[[:space:]]*\([^[:space:]\\]*\).*/\1/p' ${CONFIG_MK} | head -n 1)
+if [[ "${CHCORE_LLM}" = "ON" && "${CHCORE_PLAT}" = "rk3588" ]]; then
+    CHCORE_LLM=1
+else
+    if [[ "${CHCORE_LLM}" = "ON" ]]; then
+        echo "CHCORE_LLM is only supported on rk3588; disabled for ${CHCORE_PLAT}"
+    fi
+    CHCORE_LLM=0
+fi
 # clean framework
 cd ${OH_TEE_FRAMEWORK_DIR}/build
 ./clean_framework.sh ${OH_TEE_FRAMEWORK_DIR}
@@ -70,7 +79,33 @@ cd ${OH_TEE_FRAMEWORK_DIR}/build
 ./build_framework.sh oh_64 ${CHCORE_DIR}/oh_tee ${COMPILER_DIR} ${COMPILER_VER} ${OH_TEE_FRAMEWORK_DIR} ${THIRD_PARTY} ${CHCORE_PLAT}
 # compile again to put the apps into ramdisk-dir
 cd ${CHCORE_DIR}
+if [ "${CHCORE_LLM}" = 1 ]; then
+cd ${CHCORE_DIR}/..
+rm -rf ${CHCORE_DIR}/../oh-llama.cpp
+git clone https://gitcode.com/openharmony-robot/oh-llama.cpp.git oh-llama.cpp
+cd oh-llama.cpp
+mkdir build
+cmake -S . -B build \
+  -DCMAKE_TOOLCHAIN_FILE=${OH_TOP_DIR}/prebuilts/ohos-sdk/linux/15/native/build/cmake/ohos.toolchain.cmake \
+  -DLLAMA_TEE_CHCORE_LIB=${CHCORE_DIR}/libc_shared.so \
+  -DGGML_NATIVE=OFF \
+  -DGGML_OPENMP=OFF \
+  -DLLAMA_BUILD_TESTS=OFF \
+  -DLLAMA_CURL=OFF \
+  -DGGML_TEE=ON
+cmake --build build -j$(nproc) --target infer
+cd ${CHCORE_DIR}
+fi
 make clean
 mkdir -p ramdisk-dir
 cp oh_tee/apps/* ramdisk-dir
+if [ "${CHCORE_LLM}" = 1 ]; then
+cp ${CHCORE_DIR}/../oh-llama.cpp/build/bin/libinfer.so ramdisk-dir
+cp ${CHCORE_DIR}/../oh-llama.cpp/build/bin/libggml.so ramdisk-dir
+cp ${CHCORE_DIR}/../oh-llama.cpp/build/bin/libggml-base.so ramdisk-dir
+cp ${CHCORE_DIR}/../oh-llama.cpp/build/bin/libggml-cpu.so ramdisk-dir
+cp ${CHCORE_DIR}/../oh-llama.cpp/build/bin/libllama.so ramdisk-dir
+cp ${OH_TOP_DIR}/prebuilts/ohos-sdk/linux/15/native/llvm/lib/aarch64-linux-ohos/libc++_shared.so ramdisk-dir
+rm -rf ${CHCORE_DIR}/../oh-llama.cpp
+fi
 make -j$(nproc) OH_DIR=${OH_TOP_DIR}
