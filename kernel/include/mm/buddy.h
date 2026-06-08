@@ -47,10 +47,10 @@ struct free_list {
  * Supported Order: [0, BUDDY_MAX_ORDER).
  * The max allocated size (continous physical memory size) is
  * 2^(BUDDY_MAX_ORDER - 1) * 4K.
- * Given BUDDY_MAX_ORDER is 14, the max allocated chunk is 32M.
+ * Given BUDDY_MAX_ORDER is 15, the max allocated chunk is 64M.
  */
 #define BUDDY_PAGE_SIZE (0x1000)
-#define BUDDY_MAX_ORDER (14)
+#define BUDDY_MAX_ORDER (15)
 
 /* One page size is 4K, so the order is 12. */
 #define BUDDY_PAGE_SIZE_ORDER (12)
