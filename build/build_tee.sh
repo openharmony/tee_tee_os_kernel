@@ -35,6 +35,12 @@ fi
 if [[ -z "$COMPILER_VER" ]]; then
     COMPILER_VER=15.0.4
 fi
+CONFIG_MK=${CHCORE_DIR}/config.mk
+CHCORE_PLAT=$(sed -n 's/^[[:space:]]*CHCORE_PLAT[[:space:]]*=[[:space:]]*\([^[:space:]\\]*\).*/\1/p' ${CONFIG_MK} | head -n 1)
+if [[ -z "${CHCORE_PLAT}" ]]; then
+    echo "failed to get CHCORE_PLAT from ${CONFIG_MK}"
+    exit 1
+fi
 # clean framework
 cd ${OH_TEE_FRAMEWORK_DIR}/build
 ./clean_framework.sh ${OH_TEE_FRAMEWORK_DIR}
@@ -61,7 +67,7 @@ cp -r ${CHCORE_DIR}/user/chcore-libc/musl-libc/install/include/* ${OH_TEE_HEADER
 cp ${CHCORE_DIR}/user/chcore-libs/sys-libs/libohtee/include/* ${OH_TEE_HEADERS_DIR}/sys/
 # go to framework and build it
 cd ${OH_TEE_FRAMEWORK_DIR}/build
-./build_framework.sh oh_64 ${CHCORE_DIR}/oh_tee ${COMPILER_DIR} ${COMPILER_VER} ${OH_TEE_FRAMEWORK_DIR} ${THIRD_PARTY} rk3568
+./build_framework.sh oh_64 ${CHCORE_DIR}/oh_tee ${COMPILER_DIR} ${COMPILER_VER} ${OH_TEE_FRAMEWORK_DIR} ${THIRD_PARTY} ${CHCORE_PLAT}
 # compile again to put the apps into ramdisk-dir
 cd ${CHCORE_DIR}
 make clean
