@@ -65,7 +65,8 @@ struct chcore_dma_handle {
  * Allocate and free coherent memory (consecutive & non-cacheable) for DMA.
  */
 void *chcore_alloc_dma_mem(unsigned long size,
-                           struct chcore_dma_handle *dma_handle);
+                           struct chcore_dma_handle *dma_handle,
+                           bool cache);
 void chcore_free_dma_mem(struct chcore_dma_handle *dma_handle);
 
 #ifdef __cplusplus
