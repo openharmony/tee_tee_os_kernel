@@ -22,7 +22,7 @@ paddr_t get_tzdram_start(void)
 
 paddr_t get_tzdram_end(void)
 {
-#ifdef CHCORE_LLM
+#if defined(CHCORE_LLM)
     return 0x8400000 + LLM_TEE_TZ_SIZE;
 #else
     // return 0x8400000 + 0x4000000;

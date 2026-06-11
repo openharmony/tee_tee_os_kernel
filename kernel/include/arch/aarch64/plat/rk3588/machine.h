@@ -446,6 +446,6 @@ paddr_t get_uart_base(void);
 #define DDRGRF_CHB_CON(i)		(0x30 + (i) * 4)
 #define DDR_CHN_CNT			4
 
-#ifdef CHCORE_LLM
+#if defined(CHCORE_LLM)
 #define LLM_TEE_TZ_SIZE  0x7C00000
 #endif

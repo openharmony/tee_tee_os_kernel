@@ -17,7 +17,7 @@
 #include <arch/tools.h>
 #include <rk_atags.h>
 
-#ifdef CHCORE_LLM
+#if defined(CHCORE_LLM)
 #define LLM_TEE_LOW_MEM_START     0x02e00000UL
 #define LLM_TEE_LOW_MEM_END       0x08000000UL
 #define LLM_RKNPU_MEM_END         0x50000000UL
@@ -63,7 +63,7 @@ void parse_mem_map(void *info)
 	size_t tz_size = tz_end - tz_start;
 
     secure_ddr_region(1, tz_start, tz_size);
-#ifdef CHCORE_LLM
+#if defined(CHCORE_LLM)
     secure_ddr_region(2,
                       RKNPU_IOMMU_LOW_PT_BASE,
                       LLM_RKNPU_MEM_END - RKNPU_IOMMU_LOW_PT_BASE);
@@ -83,12 +83,12 @@ void parse_mem_map(void *info)
 #ifdef HIGH_SECURE_DEBUG
     physmem_map_num = 4;
 #endif
-#ifdef CHCORE_LLM
+#if defined(CHCORE_LLM)
     physmem_map_num = LLM_PHYSMEM_MAP_NUM;
 #endif
     physmem_map[0][0] = ROUND_UP((paddr_t)&img_end, PAGE_SIZE);
     physmem_map[0][1] = ROUND_DOWN(get_tzdram_end(), PAGE_SIZE);
-#ifdef CHCORE_LLM
+#if defined(CHCORE_LLM)
     physmem_map[1][0] = ROUND_UP(LLM_TEE_LOW_MEM_START, PAGE_SIZE);
     physmem_map[1][1] = ROUND_DOWN(LLM_TEE_LOW_MEM_END, PAGE_SIZE);
     physmem_map[2][0] = ROUND_UP(RKNPU_IOMMU_LOW_PT_END, PAGE_SIZE);

@@ -13,6 +13,10 @@
 
 #include <common/types.h>
 
+#if defined(CHCORE_LLM)
+#error "RK3568 platform does not support LLM configuration"
+#endif /* CHCORE_LLM */
+
 #define PLAT_CPU_NUM 1
 
 void teeos_cfg_init(paddr_t start_pa);

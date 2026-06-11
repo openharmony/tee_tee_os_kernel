@@ -145,20 +145,24 @@
 /* Virtualization */
 #define SYS_virt_dispatch 240
 
-#define SYS_tee_npu_secure_switch  241
-#define SYS_tee_npu_submit_start   242
-#define SYS_tee_npu_ree_power_on   243
-#define SYS_tee_npu_ree_power_off  244
-#define SYS_tee_npu_iommu_init     245
-#define SYS_tee_npu_iommu_map      246
-#define SYS_tee_npu_iommu_unmap    247
-#define SYS_tee_npu_iommu_dump     248
-#define SYS_tee_npu_poll_complete  249
+#if defined(CHCORE_LLM)
+#define SYS_tee_npu_secure_switch 241
+#define SYS_tee_npu_submit_start  242
+#define SYS_tee_npu_ree_power_on  243
+#define SYS_tee_npu_ree_power_off 244
+#define SYS_tee_npu_iommu_init    245
+#define SYS_tee_npu_iommu_map     246
+#define SYS_tee_npu_iommu_unmap   247
+#define SYS_tee_npu_iommu_dump    248
+#define SYS_tee_npu_poll_complete 249
+#endif
 
 /* TrustZone */
 #define SYS_tee_wait_switch_req 250
 #define SYS_tee_switch_req      251
 #define SYS_tee_create_ns_pmo   252
 #define SYS_tee_pull_kernel_var 253
+#if defined(CHCORE_LLM)
 #define SYS_tee_npu_submit_cancel 254
+#endif
 #endif /* KERNEL_SYSCALL_SYSCALL_NUM_H */

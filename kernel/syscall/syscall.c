@@ -169,6 +169,7 @@ void sys_poweroff(void)
     plat_poweroff();
 }
 
+#if defined(CHCORE_LLM)
 extern void sys_tee_npu_secure_switch(bool secure);
 extern int sys_tee_npu_ree_power_on(void);
 extern int sys_tee_npu_ree_power_off(void);
@@ -183,6 +184,7 @@ extern int sys_tee_npu_iommu_map(unsigned long paddr,
 extern int sys_tee_npu_iommu_unmap(unsigned long iova, unsigned long size);
 extern void sys_tee_npu_iommu_dump(unsigned long data_iova,
                                    unsigned long dma_base_iova);
+#endif
 
 const void *syscall_table[NR_SYSCALL] = {
     [0 ... NR_SYSCALL - 1] = sys_null_placeholder,
@@ -312,6 +314,7 @@ const void *syscall_table[NR_SYSCALL] = {
     [SYS_tee_create_ns_pmo] = sys_tee_create_ns_pmo,
     [SYS_tee_pull_kernel_var] = sys_tee_pull_kernel_var,
 #endif /* CHCORE_OH_TEE */
+#if defined(CHCORE_LLM)
     [SYS_tee_npu_secure_switch] = sys_tee_npu_secure_switch,
     [SYS_tee_npu_submit_start] = sys_tee_npu_submit_start,
     [SYS_tee_npu_ree_power_on] = sys_tee_npu_ree_power_on,
@@ -322,4 +325,5 @@ const void *syscall_table[NR_SYSCALL] = {
     [SYS_tee_npu_iommu_dump] = sys_tee_npu_iommu_dump,
     [SYS_tee_npu_poll_complete] = sys_tee_npu_poll_complete,
     [SYS_tee_npu_submit_cancel] = sys_tee_npu_submit_cancel,
+#endif
 };
