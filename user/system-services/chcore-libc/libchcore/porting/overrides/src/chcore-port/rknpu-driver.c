@@ -9,6 +9,8 @@
  * PURPOSE.
  * See the Mulan PSL v2 for more details.
  */
+#if defined(CHCORE_LLM)
+
 #include "rknpu-driver.h"
 
 #include <assert.h>
@@ -203,3 +205,5 @@ int rknpu_soft_reset(struct rknpu_device *dev)
 
 	return 0;
 }
+
+#endif /* CHCORE_LLM */

@@ -473,6 +473,7 @@ void usys_poweroff(void)
     chcore_syscall0(CHCORE_SYS_poweroff);
 }
 
+#if defined(CHCORE_LLM)
 void usys_tee_npu_secure_switch(bool secure)
 {
     chcore_syscall1(CHCORE_SYS_tee_npu_secure_switch, secure);
@@ -534,3 +535,4 @@ void usys_tee_npu_iommu_dump(unsigned long data_iova,
                     data_iova,
                     dma_base_iova);
 }
+#endif

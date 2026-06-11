@@ -10,6 +10,8 @@
  * See the Mulan PSL v2 for more details.
  */
 
+#if defined(CHCORE_LLM)
+
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
@@ -286,3 +288,5 @@ void npu_close(void)
 	ret = usys_tee_npu_ree_power_off();
 	assert(ret == 0);
 }
+
+#endif /* CHCORE_LLM */

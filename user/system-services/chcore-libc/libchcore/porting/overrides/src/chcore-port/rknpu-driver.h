@@ -12,6 +12,8 @@
 #ifndef NPU_DRIVER_H
 #define NPU_DRIVER_H
 
+#if defined(CHCORE_LLM)
+
 #include "rknpu-ioctl.h"
 
 #define RKNPU_DEFAULT_TIMEOUT_MS 6000
@@ -34,5 +36,7 @@ int rknpu_dma_unmap(struct rknpu_device *rknpu_dev,
 		    unsigned long size);
 
 int rknpu_soft_reset(struct rknpu_device *rknpu_dev);
+
+#endif /* CHCORE_LLM */
 
 #endif /* NPU_DRIVER_H */
