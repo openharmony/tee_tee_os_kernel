@@ -28,6 +28,7 @@ typedef unsigned pmo_type_t;
 #define PMO_DATA_NOCACHE 6 /* non-cacheable immediate allocation */
 #ifdef CHCORE_OH_TEE
 #define PMO_TZ_NS 7 /* TrustZone non-secure memory */
+#define PMO_TZASC_CMA 8 /* Dynamically allocated secure CMA memory */
 #endif /* CHCORE_OH_TEE */
 
 #define PMO_FORBID 10 /* Forbidden area: avoid overflow */
@@ -41,6 +42,24 @@ struct ns_pmo_private {
 };
 struct tee_shm_private {
     struct tee_uuid uuid;
+    struct cap_group *owner;
+};
+struct tzasc_cma_pmo_private {
+    bool mapped;
+    unsigned long chunk_id;
+    struct cap_group *creater;
+    vaddr_t vaddr;
+    size_t len;
+};
+
+#define TZASC_CMA_MAX_CHUNKS 512
+
+struct tzasc_cma_chunk {
+    bool used;
+    unsigned long chunk_id;
+    int rgn_id;
+    paddr_t paddr;
+    size_t size;
     struct cap_group *owner;
 };
 #endif /* CHCORE_OH_TEE */
@@ -99,6 +118,21 @@ int sys_destroy_ns_pmo(cap_t cap_group, cap_t pmo);
 cap_t sys_create_tee_shared_pmo(cap_t cap_group, struct tee_uuid *uuid,
                                 unsigned long size, cap_t *self_cap);
 int sys_transfer_pmo_owner(cap_t pmo, cap_t cap_group);
+
+struct tzasc_cma_chunk *tzasc_cma_find_chunk(unsigned long chunk_id);
+
+#ifdef CHCORE_ENABLE_TZASC_CMA
+void tzasc_cma_init(void);
+#endif
+int tzasc_cma_record_alloc(unsigned long chunk_id, unsigned long paddr,
+                           unsigned long size, struct cap_group *owner);
+int tzasc_cma_record_free(unsigned long chunk_id, struct cap_group *owner);
+int tzasc_cma_check_owner(unsigned long chunk_id, struct cap_group *owner);
+int tzasc_cma_release_region(unsigned long chunk_id, struct cap_group *owner);
+int tzasc_cma_get_owned_chunk_id(struct cap_group *owner,
+                                 unsigned long *chunk_id);
+cap_t sys_create_tzasc_cma_pmo(unsigned long chunk_id);
+int sys_destroy_tzasc_cma_pmo(cap_t pmo);
 #endif /* CHCORE_OH_TEE */
 
 #endif /* OBJECT_MEMORY_H */

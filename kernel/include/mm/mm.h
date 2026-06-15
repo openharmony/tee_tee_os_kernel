@@ -35,6 +35,11 @@ void flush_tlb_by_range(struct vmspace *, vaddr_t start_va, size_t size);
 void flush_tlb_by_vmspace(struct vmspace *);
 void flush_idcache(void);
 
+#ifdef CHCORE_ENABLE_TZASC_CMA
+int secure_ddr_region_alloc(paddr_t st, size_t sz, int *rgn_out);
+int secure_ddr_region_free(int rgn);
+#endif
+
 /* Only needed on SPARC */
 void sys_cache_config(unsigned option);
 void plat_cache_config(unsigned option);
