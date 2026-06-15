@@ -34,6 +34,10 @@
 #define SYS_destroy_ns_pmo        17
 #define SYS_create_tee_shared_pmo 19
 #define SYS_transfer_pmo_owner    20
+#define SYS_tzasc_cma_alloc       21
+#define SYS_tzasc_cma_free        22
+#define SYS_create_tzasc_cma_pmo  23
+#define SYS_destroy_tzasc_cma_pmo 24
 #endif /* CHCORE_OH_TEE */
 
 /* - address translation */

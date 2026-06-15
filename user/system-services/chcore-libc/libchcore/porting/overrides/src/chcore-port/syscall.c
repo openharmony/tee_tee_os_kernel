@@ -331,6 +331,26 @@ cap_t usys_create_tee_shared_pmo(cap_t cap_group, void *uuid,
                            (unsigned long)self_cap);
 }
 
+unsigned long usys_tzasc_cma_alloc(unsigned long size)
+{
+    return chcore_syscall1(CHCORE_SYS_tzasc_cma_alloc, size);
+}
+
+int usys_tzasc_cma_free(unsigned long chunk_id)
+{
+    return chcore_syscall1(CHCORE_SYS_tzasc_cma_free, chunk_id);
+}
+
+cap_t usys_create_tzasc_cma_pmo(unsigned long chunk_id)
+{
+    return chcore_syscall1(CHCORE_SYS_create_tzasc_cma_pmo, chunk_id);
+}
+
+int usys_destroy_tzasc_cma_pmo(cap_t pmo)
+{
+    return chcore_syscall1(CHCORE_SYS_destroy_tzasc_cma_pmo, pmo);
+}
+
 cap_t usys_get_thread_id(cap_t thread_cap)
 {
     return chcore_syscall1(CHCORE_SYS_get_thread_id, thread_cap);

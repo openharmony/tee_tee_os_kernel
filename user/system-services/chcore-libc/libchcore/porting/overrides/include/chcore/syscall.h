@@ -98,6 +98,10 @@ int usys_destroy_ns_pmo(cap_t cap_group, cap_t pmo);
 int usys_transfer_pmo_owner(cap_t pmo, cap_t cap_group);
 cap_t usys_create_tee_shared_pmo(cap_t cap_group, void *uuid,
                                  unsigned long size, cap_t *self_cap);
+unsigned long usys_tzasc_cma_alloc(unsigned long size);
+int usys_tzasc_cma_free(unsigned long chunk_id);
+cap_t usys_create_tzasc_cma_pmo(unsigned long chunk_id);
+int usys_destroy_tzasc_cma_pmo(cap_t pmo);
 cap_t usys_get_thread_id(cap_t thread_cap);
 int usys_terminate_thread(cap_t thread_cap);
 cap_t usys_tee_msg_create_msg_hdl(void);
