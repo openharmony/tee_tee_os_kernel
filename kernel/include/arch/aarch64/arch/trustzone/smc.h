@@ -36,7 +36,16 @@ enum smc_ops_exit {
     SMC_EXIT_MAX = 0x4,
 };
 
+enum sec_mem_shadow_op {
+    SEC_MEM_SHADOW_ALLOC = 1,
+    SEC_MEM_SHADOW_FREE = 2,
+};
+
+#define SEC_MEM_SHADOW_OP_MASK 0xffUL
+#define SEC_MEM_SHADOW_ARG_SHIFT 8
+
 struct tz_vectors;
+struct cap_group;
 
 struct smc_registers {
     unsigned long x0;
@@ -61,5 +70,8 @@ int sys_tee_switch_req(struct smc_registers *regs_u);
 int sys_tee_wait_switch_req(struct smc_registers *regs_u);
 
 int sys_tee_pull_kernel_var(kernel_shared_varibles_t *cmd_buf_addr_buf);
+
+unsigned long sys_tzasc_cma_alloc(unsigned long size);
+int sys_tzasc_cma_free(unsigned long chunk_id);
 
 #endif /* ARCH_AARCH64_ARCH_TRUSTZONE_SMC_H */
