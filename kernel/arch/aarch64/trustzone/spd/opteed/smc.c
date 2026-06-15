@@ -430,6 +430,38 @@ int sys_tzasc_cma_free(unsigned long chunk_id)
     return sec_mem_shadow_req(SEC_MEM_SHADOW_FREE, chunk_id);
 }
 
+int tee_recycle_tzasc_cma(struct cap_group *owner)
+{
+    unsigned long chunk_id;
+    int ret;
+
+    ret = tzasc_cma_get_owned_chunk_id(owner, &chunk_id);
+    if (ret == -ENOENT)
+        return 0;
+    if (ret < 0)
+        return ret;
+
+    ret = tzasc_cma_release_region(chunk_id, owner);
+    if (ret == -ENOENT)
+        return -EAGAIN;
+    if (ret < 0) {
+        kwarn("tee_recycle_tzasc_cma: release region failed ret=%d "
+              "chunk=%lu owner=%p\n",
+              ret,
+              chunk_id,
+              owner);
+        return -EAGAIN;
+    }
+
+    kinfo("tee_recycle_tzasc_cma: free leaked chunk=%lu owner=%p\n",
+          chunk_id,
+          owner);
+    ret = (int)(long)sec_mem_shadow_req_for_owner(
+        SEC_MEM_SHADOW_FREE, chunk_id, owner, true, true);
+    if (ret < 0)
+        return -EAGAIN;
+    return ret;
+}
 
 int sys_tee_pull_kernel_var(kernel_shared_varibles_t *kernel_var_ubuf)
 {

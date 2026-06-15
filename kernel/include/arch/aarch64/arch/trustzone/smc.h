@@ -73,5 +73,6 @@ int sys_tee_pull_kernel_var(kernel_shared_varibles_t *cmd_buf_addr_buf);
 
 unsigned long sys_tzasc_cma_alloc(unsigned long size);
 int sys_tzasc_cma_free(unsigned long chunk_id);
+int tee_recycle_tzasc_cma(struct cap_group *owner);
 
 #endif /* ARCH_AARCH64_ARCH_TRUSTZONE_SMC_H */

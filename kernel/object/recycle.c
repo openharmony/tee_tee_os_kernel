@@ -28,6 +28,7 @@
 #include <syscall/syscall_hooks.h>
 #ifdef CHCORE_OH_TEE
 #include <ipc/channel.h>
+#include <arch/trustzone/smc.h>
 #endif /* CHCORE_OH_TEE */
 
 struct recycle_msg {
@@ -451,6 +452,13 @@ int sys_cap_group_recycle(cap_t cap_group_cap)
         return -ECAPBILITY;
 
     ret = 0;
+
+#ifdef CHCORE_OH_TEE
+    ret = tee_recycle_tzasc_cma(cap_group);
+    if (ret != 0)
+        goto out;
+#endif /* CHCORE_OH_TEE */
+
     /* Phase-1: Stop all the threads in this cap_group */
 
     /* IPC recycle begin */
