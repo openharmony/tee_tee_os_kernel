@@ -135,6 +135,42 @@ reserved-memory {
 CHCORE_LLM=OFF
 ```
 
+## 安全内存动态分配配置 ##
+
+`CHCORE_ENABLE_TZASC_CMA` 用于控制 TZASC CMA 安全内存动态分配接口，配置位置为
+`base/tee/tee_os_kernel/config.mk`：
+
+```Makefile
+CHCORE_ENABLE_TZASC_CMA=ON \
+```
+
+该开关默认关闭。关闭时，动态安全内存相关 syscall 会返回 `-ENOSYS`，内核不会依赖平台侧
+`secure_ddr_region_alloc/free` 接口。
+
+当前该功能仅支持 RK3588 平台。启用该开关时，需要同时将 `CHCORE_PLAT` 配置为 `rk3588`。
+RK3399、RK3568 平台不支持 TZASC CMA，误开启会在编译阶段报错。
+
+运行依赖动态安全内存分配的 CA/TA 时，除开启上述编译开关外，还需要在设备树中新增一块
+CMA 空间，用于动态分配安全内存。示例如下，实际地址和大小需要按板级内存布局调整：
+
+```text
+secure_cma: secure-cma@50000000 {
+    compatible = "shared-dma-pool";
+    reusable;
+    reg = <0x0 0x50000000 0x0 0x10000000>;
+};
+```
+
+此外，还需要将该 CMA 区域绑定给 TEE，并确保 TEE 页表能够覆盖该物理地址范围。示例如下：
+
+```text
+trusted_core {
+    compatible = "trusted_core";
+    interrupts = <0 296 4>;
+    memory-region = <&secure_cma>;
+};
+```
+
 ## 相关仓
 
 [tee_os_framework](https://gitcode.com/openharmony/tee_tee_os_framework)
