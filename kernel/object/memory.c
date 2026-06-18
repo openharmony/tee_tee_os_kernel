@@ -18,6 +18,7 @@
 #include <mm/kmalloc.h>
 #include <common/lock.h>
 #include <common/util.h>
+#include <common/errno.h>
 #include <arch/mmu.h>
 #include <machine.h>
 #include <object/user_fault.h>
@@ -99,6 +100,7 @@ int sys_tee_create_ns_pmo(unsigned long paddr, unsigned long size)
 
 #ifdef CHCORE_OH_TEE
 
+#ifdef CHCORE_ENABLE_TZASC_CMA
 static struct lock tzasc_cma_lock;
 static struct tzasc_cma_chunk tzasc_cma_chunks[TZASC_CMA_MAX_CHUNKS];
 
@@ -355,6 +357,52 @@ int tzasc_cma_get_owned_chunk_id(struct cap_group *owner,
     unlock(&tzasc_cma_lock);
     return ret;
 }
+#else
+struct tzasc_cma_chunk *tzasc_cma_find_chunk(unsigned long chunk_id)
+{
+    (void)chunk_id;
+    return NULL;
+}
+
+int tzasc_cma_record_alloc(unsigned long chunk_id, unsigned long paddr,
+                           unsigned long size, struct cap_group *owner)
+{
+    (void)chunk_id;
+    (void)paddr;
+    (void)size;
+    (void)owner;
+    return -ENOSYS;
+}
+
+int tzasc_cma_record_free(unsigned long chunk_id, struct cap_group *owner)
+{
+    (void)chunk_id;
+    (void)owner;
+    return -ENOSYS;
+}
+
+int tzasc_cma_check_owner(unsigned long chunk_id, struct cap_group *owner)
+{
+    (void)chunk_id;
+    (void)owner;
+    return -ENOSYS;
+}
+
+int tzasc_cma_release_region(unsigned long chunk_id, struct cap_group *owner)
+{
+    (void)chunk_id;
+    (void)owner;
+    return -ENOSYS;
+}
+
+int tzasc_cma_get_owned_chunk_id(struct cap_group *owner,
+                                 unsigned long *chunk_id)
+{
+    (void)owner;
+    (void)chunk_id;
+    return -ENOENT;
+}
+#endif
 #endif /* CHCORE_OH_TEE */
 
 cap_t sys_create_pmo(unsigned long size, pmo_type_t type)
@@ -731,8 +779,10 @@ static int pmo_init(struct pmobject *pmo, pmo_type_t type, size_t len,
 #ifdef CHCORE_OH_TEE
     bool charge_heap = true;
 
+#ifdef CHCORE_ENABLE_TZASC_CMA
     if (type == PMO_TZASC_CMA)
         charge_heap = false;
+#endif
 
     if (charge_heap) {
         lock(&cap_group->heap_size_lock);
@@ -832,6 +882,7 @@ static int pmo_init(struct pmobject *pmo, pmo_type_t type, size_t len,
         }
         break;
     }
+#ifdef CHCORE_ENABLE_TZASC_CMA
     case PMO_TZASC_CMA: {
         pmo->start = paddr;
         pmo->private = kzalloc(sizeof(struct tzasc_cma_pmo_private));
@@ -843,6 +894,7 @@ static int pmo_init(struct pmobject *pmo, pmo_type_t type, size_t len,
         }
         break;
     }
+#endif
 #endif /* CHCORE_OH_TEE */
     case PMO_FORBID: {
         /* This type marks the corresponding area cannot be accessed */
@@ -895,7 +947,7 @@ static void __free_pmo_page(void *addr)
     kfree((void *)phys_to_virt(addr));
 }
 
-#ifdef CHCORE_OH_TEE
+#if defined(CHCORE_OH_TEE) && defined(CHCORE_ENABLE_TZASC_CMA)
 static int __release_tzasc_cma_pmo_region(struct pmobject *pmobject,
                                           struct cap_group *owner)
 {
@@ -915,7 +967,7 @@ static int __release_tzasc_cma_pmo_region(struct pmobject *pmobject,
 
     return ret;
 }
-#endif /* CHCORE_OH_TEE */
+#endif
 
 void pmo_deinit(void *pmo_ptr)
 {
@@ -926,6 +978,7 @@ void pmo_deinit(void *pmo_ptr)
     type = pmo->type;
 
 #ifdef CHCORE_OH_TEE
+#ifdef CHCORE_ENABLE_TZASC_CMA
     if (type == PMO_TZASC_CMA) {
         int ret = __release_tzasc_cma_pmo_region(pmo, pmo->owner);
 
@@ -934,10 +987,13 @@ void pmo_deinit(void *pmo_ptr)
     }
 
     if (type != PMO_TZASC_CMA) {
+#endif
         lock(&pmo->owner->heap_size_lock);
         pmo->owner->heap_size_used -= pmo->size;
         unlock(&pmo->owner->heap_size_lock);
+#ifdef CHCORE_ENABLE_TZASC_CMA
     }
+#endif
     obj_put(pmo->owner);
 #endif /* CHCORE_OH_TEE */
 
@@ -978,10 +1034,12 @@ void pmo_deinit(void *pmo_ptr)
         kfree(pmo->private);
         break;
     }
+#ifdef CHCORE_ENABLE_TZASC_CMA
     case PMO_TZASC_CMA: {
         kfree(pmo->private);
         break;
     }
+#endif
 #endif /* CHCORE_OH_TEE */
     case PMO_FORBID: {
         break;
@@ -1247,6 +1305,7 @@ out:
     return ret;
 }
 
+#ifdef CHCORE_ENABLE_TZASC_CMA
 static int __destroy_tzasc_cma_pmo(struct vmspace *vmspace,
                                    struct pmobject *pmobject)
 {
@@ -1352,6 +1411,19 @@ out_put_pmo:
     obj_put(pmobject);
     return ret;
 }
+#else
+cap_t sys_create_tzasc_cma_pmo(unsigned long chunk_id)
+{
+    (void)chunk_id;
+    return -ENOSYS;
+}
+
+int sys_destroy_tzasc_cma_pmo(cap_t pmo)
+{
+    (void)pmo;
+    return -ENOSYS;
+}
+#endif
 
 cap_t sys_create_tee_shared_pmo(cap_t cap_group, struct tee_uuid *uuid,
                                 unsigned long size, cap_t *self_cap)

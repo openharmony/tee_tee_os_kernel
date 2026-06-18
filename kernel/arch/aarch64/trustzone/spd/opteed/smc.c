@@ -17,6 +17,7 @@
 #include <object/thread.h>
 #include <object/object.h>
 #include <object/memory.h>
+#include <common/errno.h>
 #include <mm/uaccess.h>
 #include <arch/machine/smp.h>
 #include <arch/trustzone/smc.h>
@@ -89,6 +90,7 @@ static void sec_mem_shadow_pending_lock_init_once(void)
     }
 }
 
+#ifdef CHCORE_ENABLE_TZASC_CMA
 static unsigned long sec_mem_shadow_make_cookie(u16 slot, u16 generation)
 {
     return SEC_MEM_SHADOW_COOKIE_MAGIC
@@ -135,6 +137,7 @@ static int sec_mem_shadow_pending_alloc(unsigned long op, unsigned long arg,
     unlock(&sec_mem_shadow_pending_lock);
     return -ENOMEM;
 }
+#endif
 
 static bool sec_mem_shadow_cookie_valid(unsigned long cookie, u16 *slot_out)
 {
@@ -361,6 +364,7 @@ int sys_tee_switch_req(struct smc_registers *regs_u)
     BUG("Should not reach here.\n");
 }
 
+#ifdef CHCORE_ENABLE_TZASC_CMA
 static unsigned long sec_mem_shadow_req_for_owner(unsigned long op,
                                                   unsigned long arg,
                                                   struct cap_group *owner,
@@ -407,18 +411,28 @@ static unsigned long sec_mem_shadow_req(unsigned long op, unsigned long arg)
     return sec_mem_shadow_req_for_owner(
         op, arg, current_cap_group, false, false);
 }
+#endif
 
 unsigned long sys_tzasc_cma_alloc(unsigned long size)
 {
+#ifndef CHCORE_ENABLE_TZASC_CMA
+    (void)size;
+    return -ENOSYS;
+#else
     if (size == 0 || (size >> (sizeof(unsigned long) * 8 - SEC_MEM_SHADOW_ARG_SHIFT)) != 0)
         return -EINVAL;
 
     size = ROUND_UP(size, PAGE_SIZE);
     return sec_mem_shadow_req(SEC_MEM_SHADOW_ALLOC, size);
+#endif
 }
 
 int sys_tzasc_cma_free(unsigned long chunk_id)
 {
+#ifndef CHCORE_ENABLE_TZASC_CMA
+    (void)chunk_id;
+    return -ENOSYS;
+#else
     int ret;
 
     if (chunk_id == 0 || (chunk_id >> (sizeof(unsigned long) * 8 - SEC_MEM_SHADOW_ARG_SHIFT)) != 0)
@@ -428,10 +442,15 @@ int sys_tzasc_cma_free(unsigned long chunk_id)
     if (ret < 0)
         return ret;
     return sec_mem_shadow_req(SEC_MEM_SHADOW_FREE, chunk_id);
+#endif
 }
 
 int tee_recycle_tzasc_cma(struct cap_group *owner)
 {
+#ifndef CHCORE_ENABLE_TZASC_CMA
+    (void)owner;
+    return 0;
+#else
     unsigned long chunk_id;
     int ret;
 
@@ -461,6 +480,7 @@ int tee_recycle_tzasc_cma(struct cap_group *owner)
     if (ret < 0)
         return -EAGAIN;
     return ret;
+#endif
 }
 
 int sys_tee_pull_kernel_var(kernel_shared_varibles_t *kernel_var_ubuf)

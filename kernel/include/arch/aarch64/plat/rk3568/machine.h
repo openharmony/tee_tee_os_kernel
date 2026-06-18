@@ -16,6 +16,9 @@
 #if defined(CHCORE_LLM)
 #error "RK3568 platform does not support LLM configuration"
 #endif /* CHCORE_LLM */
+#ifdef CHCORE_ENABLE_TZASC_CMA
+#error "RK3568 does not support TZASC CMA, please disable CHCORE_ENABLE_TZASC_CMA in config.mk"
+#endif
 
 #define PLAT_CPU_NUM 1
 
