@@ -80,13 +80,36 @@ cd ${OH_TEE_FRAMEWORK_DIR}/build
 # compile again to put the apps into ramdisk-dir
 cd ${CHCORE_DIR}
 if [ "${CHCORE_LLM}" = 1 ]; then
+OHOS_SDK_LINUX_DIR=${OH_TOP_DIR}/prebuilts/ohos-sdk/linux
+OHOS_SDK_VERSION_DIRS=()
+for sdk_version_dir in "${OHOS_SDK_LINUX_DIR}"/*; do
+    if [[ -d "${sdk_version_dir}" ]]; then
+        OHOS_SDK_VERSION_DIRS+=("${sdk_version_dir}")
+    fi
+done
+if [[ ${#OHOS_SDK_VERSION_DIRS[@]} -ne 1 ]]; then
+    echo "expected exactly one OHOS SDK version directory under ${OHOS_SDK_LINUX_DIR}, found ${#OHOS_SDK_VERSION_DIRS[@]}"
+    exit 1
+fi
+OHOS_SDK_NATIVE_DIR=${OHOS_SDK_VERSION_DIRS[0]}/native
+OHOS_TOOLCHAIN_FILE=${OHOS_SDK_NATIVE_DIR}/build/cmake/ohos.toolchain.cmake
+OHOS_LIBCXX_SHARED=${OHOS_SDK_NATIVE_DIR}/llvm/lib/aarch64-linux-ohos/libc++_shared.so
+if [[ ! -f "${OHOS_TOOLCHAIN_FILE}" ]]; then
+    echo "missing OHOS toolchain file: ${OHOS_TOOLCHAIN_FILE}"
+    exit 1
+fi
+if [[ ! -f "${OHOS_LIBCXX_SHARED}" ]]; then
+    echo "missing OHOS libc++ shared library: ${OHOS_LIBCXX_SHARED}"
+    exit 1
+fi
+
 cd ${CHCORE_DIR}/..
-rm -rf ${CHCORE_DIR}/../oh-llama.cpp
-git clone https://gitcode.com/openharmony-robot/oh-llama.cpp.git oh-llama.cpp
-cd oh-llama.cpp
+rm -rf ${CHCORE_DIR}/../tee-llama.cpp
+git clone https://gitcode.com/openharmony-robot/tee-llama.cpp.git tee-llama.cpp
+cd tee-llama.cpp
 mkdir build
 cmake -S . -B build \
-  -DCMAKE_TOOLCHAIN_FILE=${OH_TOP_DIR}/prebuilts/ohos-sdk/linux/15/native/build/cmake/ohos.toolchain.cmake \
+  -DCMAKE_TOOLCHAIN_FILE=${OHOS_TOOLCHAIN_FILE} \
   -DLLAMA_TEE_CHCORE_LIB=${CHCORE_DIR}/libc_shared.so \
   -DGGML_NATIVE=OFF \
   -DGGML_OPENMP=OFF \
@@ -100,12 +123,12 @@ make clean
 mkdir -p ramdisk-dir
 cp oh_tee/apps/* ramdisk-dir
 if [ "${CHCORE_LLM}" = 1 ]; then
-cp ${CHCORE_DIR}/../oh-llama.cpp/build/bin/libinfer.so ramdisk-dir
-cp ${CHCORE_DIR}/../oh-llama.cpp/build/bin/libggml.so ramdisk-dir
-cp ${CHCORE_DIR}/../oh-llama.cpp/build/bin/libggml-base.so ramdisk-dir
-cp ${CHCORE_DIR}/../oh-llama.cpp/build/bin/libggml-cpu.so ramdisk-dir
-cp ${CHCORE_DIR}/../oh-llama.cpp/build/bin/libllama.so ramdisk-dir
-cp ${OH_TOP_DIR}/prebuilts/ohos-sdk/linux/15/native/llvm/lib/aarch64-linux-ohos/libc++_shared.so ramdisk-dir
-rm -rf ${CHCORE_DIR}/../oh-llama.cpp
+cp ${CHCORE_DIR}/../tee-llama.cpp/build/bin/libinfer.so ramdisk-dir
+cp ${CHCORE_DIR}/../tee-llama.cpp/build/bin/libggml.so ramdisk-dir
+cp ${CHCORE_DIR}/../tee-llama.cpp/build/bin/libggml-base.so ramdisk-dir
+cp ${CHCORE_DIR}/../tee-llama.cpp/build/bin/libggml-cpu.so ramdisk-dir
+cp ${CHCORE_DIR}/../tee-llama.cpp/build/bin/libllama.so ramdisk-dir
+cp ${OHOS_LIBCXX_SHARED} ramdisk-dir
+rm -rf ${CHCORE_DIR}/../tee-llama.cpp
 fi
 make -j$(nproc) OH_DIR=${OH_TOP_DIR}
