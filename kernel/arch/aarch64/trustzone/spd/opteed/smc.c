@@ -31,6 +31,7 @@ struct smc_percpu_struct {
 } smc_percpu_structs[PLAT_CPU_NUM];
 
 paddr_t smc_ttbr0_el1;
+static struct lock sec_mem_shadow_pending_lock;
 
 #define SMC_ASID 1000UL
 static void init_smc_page_table(void)
@@ -53,6 +54,10 @@ void smc_init(void)
         percpu->waiting_thread = NULL;
     }
 
+#ifdef CHCORE_ENABLE_TZASC_CMA
+    tzasc_cma_init();
+#endif
+    BUG_ON(lock_init(&sec_mem_shadow_pending_lock) != 0);
     init_smc_page_table();
 }
 
@@ -77,18 +82,8 @@ struct sec_mem_shadow_pending {
     bool recycle_retry;
 };
 
-static struct lock sec_mem_shadow_pending_lock;
-static bool sec_mem_shadow_pending_lock_inited;
 static struct sec_mem_shadow_pending
     sec_mem_shadow_pending[SEC_MEM_SHADOW_PENDING_MAX];
-
-static void sec_mem_shadow_pending_lock_init_once(void)
-{
-    if (!sec_mem_shadow_pending_lock_inited) {
-        lock_init(&sec_mem_shadow_pending_lock);
-        sec_mem_shadow_pending_lock_inited = true;
-    }
-}
 
 #ifdef CHCORE_ENABLE_TZASC_CMA
 static unsigned long sec_mem_shadow_make_cookie(u16 slot, u16 generation)
@@ -109,7 +104,6 @@ static int sec_mem_shadow_pending_alloc(unsigned long op, unsigned long arg,
     if (owner == NULL || cookie == NULL)
         return -EINVAL;
 
-    sec_mem_shadow_pending_lock_init_once();
     lock(&sec_mem_shadow_pending_lock);
 
     for (slot = 0; slot < SEC_MEM_SHADOW_PENDING_MAX; slot++) {
@@ -167,7 +161,6 @@ static bool sec_mem_shadow_pending_take(
     if (taken == NULL || !sec_mem_shadow_cookie_valid(cookie, &slot))
         return false;
 
-    sec_mem_shadow_pending_lock_init_once();
     lock(&sec_mem_shadow_pending_lock);
 
     pending = &sec_mem_shadow_pending[slot];
