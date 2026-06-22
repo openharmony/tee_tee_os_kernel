@@ -84,7 +84,7 @@ CHCORE_LLM=ON
 
 若 `CHCORE_PLAT` 不是 `rk3588`，即使设置 `CHCORE_LLM=ON`，RKNPU 相关 syscall、内核驱动、用户态接口和 LLM 构建打包流程也不会启用。
 
-开启后，`build/build_tee.sh` 会在构建 TEEOS 时编译 `oh-llama.cpp`，并将推理所需动态库拷贝到 `ramdisk-dir`。
+开启后，`build/build_tee.sh` 会在构建 TEEOS 时编译 `tee-llama.cpp`，并将推理所需动态库拷贝到 `ramdisk-dir`。
 
 启用该能力时，REE 侧 Linux 设备树必须同步预留 TEE 侧大模型推理使用的物理内存，并将这些区域标记为 `no-map`，避免 REE 内核、CMA 或用户态进程分配和映射这些内存。当前 RK3588 配置下，REE 侧需要预留的内存区间如下：
 

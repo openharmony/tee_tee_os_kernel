@@ -85,7 +85,7 @@ CHCORE_LLM=ON
 
 If `CHCORE_PLAT` is not `rk3588`, setting `CHCORE_LLM=ON` does not enable the RKNPU syscalls, kernel driver, user-space interfaces, or LLM build and packaging flow.
 
-When enabled, `build/build_tee.sh` builds `oh-llama.cpp` as part of the TEEOS build and copies the inference-related shared libraries into `ramdisk-dir`. Make sure `oh-llama.cpp` is placed next to the `tee_os_kernel` directory. Otherwise, the build script cannot enter the source directory after this feature is enabled.
+When enabled, `build/build_tee.sh` builds `tee-llama.cpp` as part of the TEEOS build and copies the inference-related shared libraries into `ramdisk-dir`.
 
 When this feature is enabled, the REE-side Linux device tree must reserve the physical memory used by TEE-side LLM inference and mark these regions as `no-map`. This prevents the REE kernel, CMA, or user processes from allocating or mapping memory that is owned by the TEE. With the current RK3588 configuration, the memory ranges that must be reserved on the REE side are:
 
