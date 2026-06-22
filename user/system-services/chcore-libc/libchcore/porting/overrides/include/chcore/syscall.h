@@ -139,6 +139,22 @@ int usys_tee_pull_kernel_var(unsigned long cmd_buf_addr_buf);
 void usys_disable_local_irq(void);
 void usys_enable_local_irq(void);
 void usys_poweroff(void);
+#if defined(CHCORE_LLM)
+void usys_tee_npu_secure_switch(bool secure);
+int usys_tee_npu_submit_start(unsigned long submits, int task_num);
+int usys_tee_npu_poll_complete(void);
+int usys_tee_npu_submit_cancel(void);
+int usys_tee_npu_ree_power_on(void);
+int usys_tee_npu_ree_power_off(void);
+int usys_tee_npu_iommu_init(void);
+int usys_tee_npu_iommu_map(unsigned long paddr,
+                           unsigned long size,
+                           unsigned int prot,
+                           unsigned long *iova);
+int usys_tee_npu_iommu_unmap(unsigned long iova, unsigned long size);
+void usys_tee_npu_iommu_dump(unsigned long data_iova,
+                             unsigned long dma_base_iova);
+#endif
 
 #ifdef __cplusplus
 }

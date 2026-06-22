@@ -33,6 +33,11 @@ OBJCOPY := $(CHCORE_COMPILER_DIR)/bin/llvm-objcopy
 ARCH_DIRS := backtrace irq machine mm sched sync trustzone
 ARCH_PATH := arch/$(CHCORE_ARCH)
 PLAT_DIRS := irq mm uart
+ifeq ($(CHCORE_PLAT),rk3588)
+ifeq ($(CHCORE_LLM),ON)
+PLAT_DIRS += rknpu
+endif
+endif
 PLAT_PATH := arch/$(CHCORE_ARCH)/plat/$(CHCORE_PLAT)
 SPD_PATH := arch/$(CHCORE_ARCH)/trustzone/spd/$(CHCORE_SPD)
 DIRS := ipc irq lib mm object sched syscall \

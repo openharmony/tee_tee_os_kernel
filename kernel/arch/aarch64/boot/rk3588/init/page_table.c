@@ -52,15 +52,24 @@ void init_boot_page_table(void)
     boot_ttbr1_l0.ent[GET_L0_INDEX(vaddr)].pte = (paddr_t)&boot_ttbr1_l1
                                                  | IS_TABLE | IS_VALID;
 
-    /* Blindly map 0~1G as normal memory */
-    paddr = 0;
-    vaddr = phys_to_virt(paddr);
-    boot_ttbr1_l1.ent[GET_L1_INDEX(vaddr)].pte =
-        paddr | UXN | ACCESSED | SECURE | INNER_SHARABLE | NORMAL | IS_VALID;
+
+    /* Blindly map 0~3G as normal memory */
+    for (size_t i = 0; i < 3; ++i) {
+        paddr = i * (1UL << L1_INDEX_SHIFT);
+        vaddr = phys_to_virt(paddr);
+        boot_ttbr1_l1.ent[GET_L1_INDEX(vaddr)].pte =
+            paddr | UXN | ACCESSED | SECURE | INNER_SHARABLE | NORMAL | IS_VALID;
+    }
 
     /* Blindly map 3~4G as device memory */
     paddr = 3 * (1UL << L1_INDEX_SHIFT);
     vaddr = phys_to_virt(paddr);
     boot_ttbr1_l1.ent[GET_L1_INDEX(vaddr)].pte = paddr | UXN | ACCESSED | DEVICE
                                                  | SECURE | IS_VALID;
+    for (size_t i = 4; i < 28; ++i) {
+        paddr = i * (1UL << L1_INDEX_SHIFT);
+        vaddr = phys_to_virt(paddr);
+        boot_ttbr1_l1.ent[GET_L1_INDEX(vaddr)].pte = paddr | UXN | ACCESSED | SECURE |
+            INNER_SHARABLE | NORMAL | IS_VALID;
+    }
 }

@@ -10,24 +10,23 @@
  * See the Mulan PSL v2 for more details.
  */
 #include <machine.h>
+#include <common/errno.h>
 #include <mm/mm.h>
 #include <common/macro.h>
 #include <common/types.h>
 #include <arch/tools.h>
 #include <rk_atags.h>
 
-#define FIREWALL_DDR_BASE 0xfe030000
-#define FIREWALL_DSU_BASE 0xfe010000
-#define FIREWALL_DDR_RGN_CNT 16
-#define FIREWALL_DDR_RGN(i) ((i) * 0x4)
-#define FIREWALL_DDR_MST(i) (0x40 + (i) * 0x4)
-#define FIREWALL_DSU_CON(i) (0xf0 + (i) * 4)
-#define FIREWALL_DSU_RGN(i) ((i) * 0x4)
-#define FIREWALL_DDR_CON 0xf0
-#define BIT(n) (1U << (n))
-#define DDR_CHN_CNT 1
-#define RG_MAP_SECURE(ed, st) (((ed) << 16) | ((st) & 0xffff))
-#define SIZE_M(n)		((n) * 1024 * 1024)
+#if defined(CHCORE_LLM)
+#define LLM_TEE_LOW_MEM_START     0x02e00000UL
+#define LLM_TEE_LOW_MEM_END       0x08000000UL
+#define LLM_RKNPU_MEM_END         0x50000000UL
+#define LLM_TEE_HIGH_MEM_START    0x60000000UL
+#define LLM_TEE_HIGH_MEM_END      0xC0000000UL
+#define LLM_TEE_ABOVE_16G_MEM_START 0x400000000UL
+#define LLM_TEE_ABOVE_16G_MEM_END   0x700000000UL
+#define LLM_PHYSMEM_MAP_NUM       5
+#endif /* CHCORE_LLM */
 
 static int secure_ddr_region(int rgn, paddr_t st, size_t sz)
 {
@@ -38,7 +37,7 @@ static int secure_ddr_region(int rgn, paddr_t st, size_t sz)
     paddr_t st_mb = st / SIZE_M(1);
     paddr_t ed_mb = (st + sz - 1) / SIZE_M(1);
 
-    if (rgn >= FIREWALL_DDR_RGN_CNT){
+    if (rgn < 0 || rgn >= FIREWALL_DDR_RGN_CNT || rgn >= FIREWALL_DSU_RGN_CNT) {
 		return -1;
 	}
 
@@ -64,13 +63,42 @@ void parse_mem_map(void *info)
 	size_t tz_size = tz_end - tz_start;
 
     secure_ddr_region(1, tz_start, tz_size);
+#if defined(CHCORE_LLM)
+    secure_ddr_region(2,
+                      RKNPU_IOMMU_LOW_PT_BASE,
+                      LLM_RKNPU_MEM_END - RKNPU_IOMMU_LOW_PT_BASE);
+    secure_ddr_region(3,
+                      LLM_TEE_LOW_MEM_START,
+                      LLM_TEE_LOW_MEM_END - LLM_TEE_LOW_MEM_START);
+    secure_ddr_region(4,
+                      LLM_TEE_HIGH_MEM_START,
+                      LLM_TEE_HIGH_MEM_END - LLM_TEE_HIGH_MEM_START);
+    secure_ddr_region(5,
+                      LLM_TEE_ABOVE_16G_MEM_START,
+                      LLM_TEE_ABOVE_16G_MEM_END
+                          - LLM_TEE_ABOVE_16G_MEM_START);
+#endif
 
     physmem_map_num = 1;
 #ifdef HIGH_SECURE_DEBUG
     physmem_map_num = 4;
 #endif
+#if defined(CHCORE_LLM)
+    physmem_map_num = LLM_PHYSMEM_MAP_NUM;
+#endif
     physmem_map[0][0] = ROUND_UP((paddr_t)&img_end, PAGE_SIZE);
     physmem_map[0][1] = ROUND_DOWN(get_tzdram_end(), PAGE_SIZE);
+#if defined(CHCORE_LLM)
+    physmem_map[1][0] = ROUND_UP(LLM_TEE_LOW_MEM_START, PAGE_SIZE);
+    physmem_map[1][1] = ROUND_DOWN(LLM_TEE_LOW_MEM_END, PAGE_SIZE);
+    physmem_map[2][0] = ROUND_UP(RKNPU_IOMMU_LOW_PT_END, PAGE_SIZE);
+    physmem_map[2][1] = ROUND_DOWN(LLM_RKNPU_MEM_END, PAGE_SIZE);
+    physmem_map[3][0] = ROUND_UP(LLM_TEE_HIGH_MEM_START, PAGE_SIZE);
+    physmem_map[3][1] = ROUND_DOWN(LLM_TEE_HIGH_MEM_END, PAGE_SIZE);
+    physmem_map[4][0] = ROUND_UP(LLM_TEE_ABOVE_16G_MEM_START, PAGE_SIZE);
+    physmem_map[4][1] = ROUND_DOWN(LLM_TEE_ABOVE_16G_MEM_END, PAGE_SIZE);
+#endif
+
     kinfo("[ChCore] physmem_map: [0x%lx, 0x%lx)\n",
           physmem_map[0][0],
           physmem_map[0][1]);
@@ -87,4 +115,3 @@ void parse_mem_map(void *info)
     tag_tos_mem.version = 65536;
     set_tos_mem_tag(&tag_tos_mem);
 }
-

@@ -472,3 +472,67 @@ void usys_poweroff(void)
 {
     chcore_syscall0(CHCORE_SYS_poweroff);
 }
+
+#if defined(CHCORE_LLM)
+void usys_tee_npu_secure_switch(bool secure)
+{
+    chcore_syscall1(CHCORE_SYS_tee_npu_secure_switch, secure);
+}
+
+int usys_tee_npu_submit_start(unsigned long submits, int task_num)
+{
+    return chcore_syscall2(CHCORE_SYS_tee_npu_submit_start,
+                           submits,
+                           task_num);
+}
+
+int usys_tee_npu_poll_complete(void)
+{
+    return chcore_syscall0(CHCORE_SYS_tee_npu_poll_complete);
+}
+
+int usys_tee_npu_submit_cancel(void)
+{
+    return chcore_syscall0(CHCORE_SYS_tee_npu_submit_cancel);
+}
+
+int usys_tee_npu_ree_power_on(void)
+{
+    return chcore_syscall0(CHCORE_SYS_tee_npu_ree_power_on);
+}
+
+int usys_tee_npu_ree_power_off(void)
+{
+    return chcore_syscall0(CHCORE_SYS_tee_npu_ree_power_off);
+}
+
+int usys_tee_npu_iommu_init(void)
+{
+    return chcore_syscall0(CHCORE_SYS_tee_npu_iommu_init);
+}
+
+int usys_tee_npu_iommu_map(unsigned long paddr,
+                           unsigned long size,
+                           unsigned int prot,
+                           unsigned long *iova)
+{
+    return chcore_syscall4(CHCORE_SYS_tee_npu_iommu_map,
+                           paddr,
+                           size,
+                           prot,
+                           (unsigned long)iova);
+}
+
+int usys_tee_npu_iommu_unmap(unsigned long iova, unsigned long size)
+{
+    return chcore_syscall2(CHCORE_SYS_tee_npu_iommu_unmap, iova, size);
+}
+
+void usys_tee_npu_iommu_dump(unsigned long data_iova,
+                             unsigned long dma_base_iova)
+{
+    chcore_syscall2(CHCORE_SYS_tee_npu_iommu_dump,
+                    data_iova,
+                    dma_base_iova);
+}
+#endif

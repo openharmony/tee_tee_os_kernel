@@ -35,6 +35,21 @@ fi
 if [[ -z "$COMPILER_VER" ]]; then
     COMPILER_VER=15.0.4
 fi
+CONFIG_MK=${CHCORE_DIR}/config.mk
+CHCORE_PLAT=$(sed -n 's/^[[:space:]]*CHCORE_PLAT[[:space:]]*=[[:space:]]*\([^[:space:]\\]*\).*/\1/p' ${CONFIG_MK} | head -n 1)
+if [[ -z "${CHCORE_PLAT}" ]]; then
+    echo "failed to get CHCORE_PLAT from ${CONFIG_MK}"
+    exit 1
+fi
+CHCORE_LLM=$(sed -n 's/^[[:space:]]*CHCORE_LLM[[:space:]]*=[[:space:]]*\([^[:space:]\\]*\).*/\1/p' ${CONFIG_MK} | head -n 1)
+if [[ "${CHCORE_LLM}" = "ON" && "${CHCORE_PLAT}" = "rk3588" ]]; then
+    CHCORE_LLM=1
+else
+    if [[ "${CHCORE_LLM}" = "ON" ]]; then
+        echo "CHCORE_LLM is only supported on rk3588; disabled for ${CHCORE_PLAT}"
+    fi
+    CHCORE_LLM=0
+fi
 # clean framework
 cd ${OH_TEE_FRAMEWORK_DIR}/build
 ./clean_framework.sh ${OH_TEE_FRAMEWORK_DIR}
@@ -61,10 +76,59 @@ cp -r ${CHCORE_DIR}/user/chcore-libc/musl-libc/install/include/* ${OH_TEE_HEADER
 cp ${CHCORE_DIR}/user/chcore-libs/sys-libs/libohtee/include/* ${OH_TEE_HEADERS_DIR}/sys/
 # go to framework and build it
 cd ${OH_TEE_FRAMEWORK_DIR}/build
-./build_framework.sh oh_64 ${CHCORE_DIR}/oh_tee ${COMPILER_DIR} ${COMPILER_VER} ${OH_TEE_FRAMEWORK_DIR} ${THIRD_PARTY} rk3568
+./build_framework.sh oh_64 ${CHCORE_DIR}/oh_tee ${COMPILER_DIR} ${COMPILER_VER} ${OH_TEE_FRAMEWORK_DIR} ${THIRD_PARTY} ${CHCORE_PLAT}
 # compile again to put the apps into ramdisk-dir
 cd ${CHCORE_DIR}
+if [ "${CHCORE_LLM}" = 1 ]; then
+OHOS_SDK_LINUX_DIR=${OH_TOP_DIR}/prebuilts/ohos-sdk/linux
+OHOS_SDK_VERSION_DIRS=()
+for sdk_version_dir in "${OHOS_SDK_LINUX_DIR}"/*; do
+    if [[ -d "${sdk_version_dir}" ]]; then
+        OHOS_SDK_VERSION_DIRS+=("${sdk_version_dir}")
+    fi
+done
+if [[ ${#OHOS_SDK_VERSION_DIRS[@]} -ne 1 ]]; then
+    echo "expected exactly one OHOS SDK version directory under ${OHOS_SDK_LINUX_DIR}, found ${#OHOS_SDK_VERSION_DIRS[@]}"
+    exit 1
+fi
+OHOS_SDK_NATIVE_DIR=${OHOS_SDK_VERSION_DIRS[0]}/native
+OHOS_TOOLCHAIN_FILE=${OHOS_SDK_NATIVE_DIR}/build/cmake/ohos.toolchain.cmake
+OHOS_LIBCXX_SHARED=${OHOS_SDK_NATIVE_DIR}/llvm/lib/aarch64-linux-ohos/libc++_shared.so
+if [[ ! -f "${OHOS_TOOLCHAIN_FILE}" ]]; then
+    echo "missing OHOS toolchain file: ${OHOS_TOOLCHAIN_FILE}"
+    exit 1
+fi
+if [[ ! -f "${OHOS_LIBCXX_SHARED}" ]]; then
+    echo "missing OHOS libc++ shared library: ${OHOS_LIBCXX_SHARED}"
+    exit 1
+fi
+
+cd ${CHCORE_DIR}/..
+rm -rf ${CHCORE_DIR}/../tee-llama.cpp
+git clone https://gitcode.com/openharmony-robot/tee-llama.cpp.git tee-llama.cpp
+cd tee-llama.cpp
+mkdir build
+cmake -S . -B build \
+  -DCMAKE_TOOLCHAIN_FILE=${OHOS_TOOLCHAIN_FILE} \
+  -DLLAMA_TEE_CHCORE_LIB=${CHCORE_DIR}/libc_shared.so \
+  -DGGML_NATIVE=OFF \
+  -DGGML_OPENMP=OFF \
+  -DLLAMA_BUILD_TESTS=OFF \
+  -DLLAMA_CURL=OFF \
+  -DGGML_TEE=ON
+cmake --build build -j$(nproc) --target infer
+cd ${CHCORE_DIR}
+fi
 make clean
 mkdir -p ramdisk-dir
 cp oh_tee/apps/* ramdisk-dir
+if [ "${CHCORE_LLM}" = 1 ]; then
+cp ${CHCORE_DIR}/../tee-llama.cpp/build/bin/libinfer.so ramdisk-dir
+cp ${CHCORE_DIR}/../tee-llama.cpp/build/bin/libggml.so ramdisk-dir
+cp ${CHCORE_DIR}/../tee-llama.cpp/build/bin/libggml-base.so ramdisk-dir
+cp ${CHCORE_DIR}/../tee-llama.cpp/build/bin/libggml-cpu.so ramdisk-dir
+cp ${CHCORE_DIR}/../tee-llama.cpp/build/bin/libllama.so ramdisk-dir
+cp ${OHOS_LIBCXX_SHARED} ramdisk-dir
+rm -rf ${CHCORE_DIR}/../tee-llama.cpp
+fi
 make -j$(nproc) OH_DIR=${OH_TOP_DIR}

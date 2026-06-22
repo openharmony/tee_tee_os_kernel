@@ -241,8 +241,23 @@
 /* Virtualization */
 #define CHCORE_SYS_virt_dispatch 240
 
+#if defined(CHCORE_LLM)
+#define CHCORE_SYS_tee_npu_secure_switch 241
+#define CHCORE_SYS_tee_npu_submit_start  242
+#define CHCORE_SYS_tee_npu_ree_power_on  243
+#define CHCORE_SYS_tee_npu_ree_power_off 244
+#define CHCORE_SYS_tee_npu_iommu_init    245
+#define CHCORE_SYS_tee_npu_iommu_map     246
+#define CHCORE_SYS_tee_npu_iommu_unmap   247
+#define CHCORE_SYS_tee_npu_iommu_dump    248
+#define CHCORE_SYS_tee_npu_poll_complete 249
+#endif
+
 /* TrustZone */
 #define CHCORE_SYS_tee_wait_switch_req 250
 #define CHCORE_SYS_tee_switch_req      251
 #define CHCORE_SYS_tee_create_ns_pmo   252
 #define CHCORE_SYS_tee_pull_kernel_var 253
+#if defined(CHCORE_LLM)
+#define CHCORE_SYS_tee_npu_submit_cancel 254
+#endif

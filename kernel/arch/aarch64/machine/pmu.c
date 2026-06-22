@@ -38,6 +38,19 @@
 #define PMCNTENSET_EL0_C \
     (1 << 31) /* PMCCNTR_EL0 enable bit. Enables the cycle counter register. */
 
+/* CNTKCTL_EL1 Counter-timer Kernel Control Register */
+#define CNTKCTL_EL1_EL0PCTEN (1 << 0) /* Allow EL0 physical counter access */
+#define CNTKCTL_EL1_EL0VCTEN (1 << 1) /* Allow EL0 virtual counter access */
+
+static void enable_el0_arch_timer(void)
+{
+    u64 cntkctl;
+
+    asm volatile("mrs %0, cntkctl_el1" : "=r"(cntkctl));
+    cntkctl |= CNTKCTL_EL1_EL0PCTEN | CNTKCTL_EL1_EL0VCTEN;
+    asm volatile("msr cntkctl_el1, %0" ::"r"(cntkctl) : "memory");
+}
+
 void enable_cpu_cnt(void)
 {
     asm volatile(
@@ -55,5 +68,6 @@ void disable_cpu_cnt(void)
 
 void pmu_init(void)
 {
+    enable_el0_arch_timer();
     enable_cpu_cnt();
 }

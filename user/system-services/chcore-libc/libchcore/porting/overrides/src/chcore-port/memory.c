@@ -278,7 +278,8 @@ void chcore_auto_unmap_pmo(cap_t pmo, unsigned long vaddr, unsigned long size)
 }
 
 void *chcore_alloc_dma_mem(unsigned long size,
-                           struct chcore_dma_handle *dma_handle)
+                           struct chcore_dma_handle *dma_handle,
+                           bool cache)
 {
     int ret;
 
@@ -288,7 +289,10 @@ void *chcore_alloc_dma_mem(unsigned long size,
 
     dma_handle->size = size;
 
-    dma_handle->pmo = usys_create_pmo(size, PMO_DATA_NOCACHE);
+    if (cache)
+        dma_handle->pmo = usys_create_pmo(size, PMO_DATA);
+    else
+        dma_handle->pmo = usys_create_pmo(size, PMO_DATA_NOCACHE);
     if (dma_handle->pmo < 0) {
         return NULL;
     }

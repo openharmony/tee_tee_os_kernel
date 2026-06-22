@@ -16,6 +16,14 @@
 #include <common/macro.h>
 #include <mm/mm.h>
 #include <object/irq.h>
+#include <machine.h>
+#include <rknpu.h>
+
+/* Number of interrupts in one register */
+#define NUM_INTS_PER_REG	32
+
+#define GIC_IRQ_PRIO_SECURE     0x01
+#define GIC_IRQ_PRIO_NONSECURE  0xD0
 
 static int nr_lines;
 
@@ -203,7 +211,11 @@ int gicv3_set_irq_target(int irq, unsigned int cpuid)
 
 int gicv3_set_irq_prio(int irq, int prio)
 {
-	put8(GICD_IPRIORITYR + irq, prio);
+#define GICD_IPRIORITYR_PRIOS_PER_REG 4
+	put8(GICD_IPRIORITYR(irq / GICD_IPRIORITYR_PRIOS_PER_REG) +
+		     (irq % GICD_IPRIORITYR_PRIOS_PER_REG),
+	     prio);
+#undef GICD_IPRIORITYR_PRIOS_PER_REG
 	return 0;
 }
 
@@ -236,6 +248,90 @@ void plat_interrupt_init(void)
 	gicv3_redistributor_init();
 }
 
+void irq_add(size_t it)
+{
+    size_t idx = it / NUM_INTS_PER_REG;
+    u32 mask = 1 << (it % NUM_INTS_PER_REG);
+
+    /* Disable the interrupt */
+    put32(GICD_ICENABLER(idx), mask);
+    /* Make it non-pending */
+    put32(GICD_ICPENDR(idx), mask);
+    /* Assign it to group0 */
+    clr32(GICD_IGROUPR(idx), mask);
+    /* Assign it to group1S */
+    set32(GICD_IGRPMODR(idx), mask);
+}
+
+void irq_rm(size_t it)
+{
+    size_t idx = it / NUM_INTS_PER_REG;
+    u32 mask = 1 << (it % NUM_INTS_PER_REG);
+
+    /* Disable the interrupt */
+    put32(GICD_ICENABLER(idx), mask);
+    /* Make it non-pending */
+    put32(GICD_ICPENDR(idx), mask);
+    /* Assign it to group0 */
+    set32(GICD_IGROUPR(idx), mask);
+    /* Assign it to group1S */
+    clr32(GICD_IGRPMODR(idx), mask);
+}
+
+void irq_set_prio(size_t it, u32 prio)
+{
+	/* Set prio it to selected CPUs */
+	gicv3_set_irq_prio(it, prio);
+}
+
+static void irq_enable(size_t it)
+{
+	size_t idx = it / NUM_INTS_PER_REG;
+	u32 mask = 1 << (it % NUM_INTS_PER_REG);
+
+	/* Enable the interrupt */
+	put32(GICD_ISENABLER(idx), mask);
+}
+
+static void irq_disable(size_t it)
+{
+	size_t idx = it / NUM_INTS_PER_REG;
+	u32 mask = 1 << (it % NUM_INTS_PER_REG);
+
+	/* Assigned to group0 */
+	BUG_ON((get32(GICD_IGROUPR(idx)) & mask));
+
+	/* Disable the interrupt */
+	put32(GICD_ICENABLER(idx), mask);
+}
+
+void set_irq_s(size_t it)
+{
+    irq_add(it);
+    irq_set_prio(it, GIC_IRQ_PRIO_SECURE);
+    gicv3_set_irq_target(it, 0);
+    irq_enable(it);
+}
+
+void set_irq_ns(size_t it)
+{
+    irq_rm(it);
+    irq_set_prio(it, GIC_IRQ_PRIO_NONSECURE);
+    irq_enable(it);
+}
+
+void set_npu_irqs_s(void) {
+    set_irq_s(RKNPU_CORE0_IRQ);
+    set_irq_s(RKNPU_CORE1_IRQ);
+    set_irq_s(RKNPU_CORE2_IRQ);
+}
+
+void set_npu_irqs_ns(void) {
+    set_irq_ns(RKNPU_CORE0_IRQ);
+    set_irq_ns(RKNPU_CORE1_IRQ);
+    set_irq_ns(RKNPU_CORE2_IRQ);
+}
+
 void plat_send_ipi(u32 cpu, u32 ipi)
 {
 	BUG("ipi not implemented\n");
@@ -259,7 +355,6 @@ void plat_handle_irq(void)
 {
 	unsigned int irqnr = 0;
 	unsigned int irqstat = 0;
-	int ret;
 
 	irqstat = read_sys_reg(ICC_IAR1_EL1);
 	dsb(sy);
@@ -269,7 +364,7 @@ void plat_handle_irq(void)
 
 	if (likely(irqnr > 15 && irqnr < 1020)) {
 		kinfo("%s: recv irq %d\n", __func__, irqnr);
-		user_handle_irq(irqnr);
+		(void)user_handle_irq(irqnr);
 	} else if (irqnr < 16) {
 		BUG("NO SGI in TEE now\n");
 	}
