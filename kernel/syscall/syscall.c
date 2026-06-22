@@ -209,6 +209,10 @@ const void *syscall_table[NR_SYSCALL] = {
     [SYS_destroy_ns_pmo] = sys_destroy_ns_pmo,
     [SYS_create_tee_shared_pmo] = sys_create_tee_shared_pmo,
     [SYS_transfer_pmo_owner] = sys_transfer_pmo_owner,
+    [SYS_tzasc_cma_alloc] = sys_tzasc_cma_alloc,
+    [SYS_tzasc_cma_free] = sys_tzasc_cma_free,
+    [SYS_create_tzasc_cma_pmo] = sys_create_tzasc_cma_pmo,
+    [SYS_destroy_tzasc_cma_pmo] = sys_destroy_tzasc_cma_pmo,
 #endif /* CHCORE_OH_TEE */
 
     /* - address translation */

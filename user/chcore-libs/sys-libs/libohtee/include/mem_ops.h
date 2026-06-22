@@ -35,6 +35,13 @@ struct stat_mem_info {
     struct stat_proc_mem proc_mem[STATPROC_MAX];
 };
 
+struct secure_mem_handle {
+    void *addr;
+    uint64_t size;
+    uint64_t chunk_id;
+    int32_t pmo;
+};
+
 int mem_ops_init(void);
 
 int32_t task_map_ns_phy_mem(uint32_t task_id, uint64_t phy_addr, uint32_t size,

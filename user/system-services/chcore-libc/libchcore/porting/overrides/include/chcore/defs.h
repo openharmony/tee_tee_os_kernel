@@ -130,6 +130,10 @@
 #define CHCORE_SYS_destroy_ns_pmo        17
 #define CHCORE_SYS_create_tee_shared_pmo 19
 #define CHCORE_SYS_transfer_pmo_owner    20
+#define CHCORE_SYS_tzasc_cma_alloc       21
+#define CHCORE_SYS_tzasc_cma_free        22
+#define CHCORE_SYS_create_tzasc_cma_pmo  23
+#define CHCORE_SYS_destroy_tzasc_cma_pmo 24
 #endif /* CHCORE_OH_TEE */
 
 /* - address translation */

@@ -322,16 +322,28 @@ int vmspace_map_range(struct vmspace *vmspace, vaddr_t va, size_t len,
     }
 
 #ifdef CHCORE_OH_TEE
-    if (pmo->type == PMO_TZ_NS) {
-        struct ns_pmo_private *private;
-    private
-        = (struct ns_pmo_private *)pmo->private;
-    private
-        ->mapped = true;
-    private
-        ->vaddr = va;
-    private
-        ->len = len;
+    if (pmo->type == PMO_TZ_NS || pmo->type == PMO_TZASC_CMA) {
+        if (pmo->type == PMO_TZ_NS) {
+            struct ns_pmo_private *private;
+        private
+            = (struct ns_pmo_private *)pmo->private;
+        private
+            ->mapped = true;
+        private
+            ->vaddr = va;
+        private
+            ->len = len;
+        } else {
+            struct tzasc_cma_pmo_private *private;
+        private
+            = (struct tzasc_cma_pmo_private *)pmo->private;
+        private
+            ->mapped = true;
+        private
+            ->vaddr = va;
+        private
+            ->len = len;
+        }
         fill_page_table(vmspace, vmr);
     }
 #endif /* CHCORE_OH_TEE */

@@ -18,7 +18,9 @@
 #include <mm/kmalloc.h>
 #include <common/lock.h>
 #include <common/util.h>
+#include <common/errno.h>
 #include <arch/mmu.h>
+#include <machine.h>
 #include <object/user_fault.h>
 #include <syscall/syscall_hooks.h>
 #include <arch/mm/cache.h>
@@ -96,12 +98,319 @@ int sys_tee_create_ns_pmo(unsigned long paddr, unsigned long size)
     return r;
 }
 
+#ifdef CHCORE_OH_TEE
+
+#ifdef CHCORE_ENABLE_TZASC_CMA
+static struct lock tzasc_cma_lock;
+static struct tzasc_cma_chunk tzasc_cma_chunks[TZASC_CMA_MAX_CHUNKS];
+
+static int tzasc_cma_release_region_locked(struct tzasc_cma_chunk *chunk);
+
+void tzasc_cma_init(void)
+{
+    BUG_ON(lock_init(&tzasc_cma_lock) != 0);
+}
+
+struct tzasc_cma_chunk *tzasc_cma_find_chunk(unsigned long chunk_id)
+{
+    size_t i;
+
+    for (i = 0; i < TZASC_CMA_MAX_CHUNKS; i++) {
+        if (tzasc_cma_chunks[i].used
+            && tzasc_cma_chunks[i].chunk_id == chunk_id)
+            return &tzasc_cma_chunks[i];
+    }
+
+    return NULL;
+}
+
+int tzasc_cma_record_alloc(unsigned long chunk_id, unsigned long paddr,
+                           unsigned long size, struct cap_group *owner)
+{
+    size_t i;
+    int ret = -ENOMEM;
+
+    if (chunk_id == 0 || paddr == 0 || size == 0 || owner == NULL)
+        return -EINVAL;
+
+    lock(&tzasc_cma_lock);
+
+    if (tzasc_cma_find_chunk(chunk_id) != NULL) {
+        ret = -EEXIST;
+        goto out;
+    }
+
+    for (i = 0; i < TZASC_CMA_MAX_CHUNKS; i++) {
+        if (!tzasc_cma_chunks[i].used) {
+            tzasc_cma_chunks[i].used = true;
+            tzasc_cma_chunks[i].chunk_id = chunk_id;
+            tzasc_cma_chunks[i].rgn_id = -1;
+            tzasc_cma_chunks[i].paddr = paddr;
+            tzasc_cma_chunks[i].size = ROUND_UP(size, PAGE_SIZE);
+            tzasc_cma_chunks[i].owner = owner;
+            ret = 0;
+            break;
+        }
+    }
+
+out:
+    unlock(&tzasc_cma_lock);
+    return ret;
+}
+
+int tzasc_cma_record_free(unsigned long chunk_id, struct cap_group *owner)
+{
+    struct tzasc_cma_chunk *chunk;
+    int ret = 0;
+
+    lock(&tzasc_cma_lock);
+
+    chunk = tzasc_cma_find_chunk(chunk_id);
+    if (chunk == NULL) {
+        ret = -ENOENT;
+        goto out;
+    }
+
+    if (chunk->owner != owner) {
+        ret = -EINVAL;
+        goto out;
+    }
+
+    ret = tzasc_cma_release_region_locked(chunk);
+    if (ret != 0)
+        goto out;
+
+    memset(chunk, 0, sizeof(*chunk));
+
+out:
+    unlock(&tzasc_cma_lock);
+    return ret;
+}
+
+int tzasc_cma_check_owner(unsigned long chunk_id, struct cap_group *owner)
+{
+    struct tzasc_cma_chunk *chunk;
+    int ret = -ENOENT;
+
+    lock(&tzasc_cma_lock);
+
+    chunk = tzasc_cma_find_chunk(chunk_id);
+    if (chunk != NULL)
+        ret = (chunk->owner == owner) ? 0 : -EINVAL;
+
+    unlock(&tzasc_cma_lock);
+    return ret;
+}
+
+static void tzasc_cma_zero_chunk(struct tzasc_cma_chunk *chunk)
+{
+    vaddr_t kva;
+
+    if (chunk->paddr == 0 || chunk->size == 0)
+        return;
+
+    kva = phys_to_virt(chunk->paddr);
+    memset((void *)kva, 0, chunk->size);
+    arch_flush_cache(kva, chunk->size, CACHE_CLEAN_AND_INV);
+}
+
+static bool tzasc_cma_range_overlaps(paddr_t start, size_t size,
+                                     paddr_t protected_start,
+                                     paddr_t protected_end)
+{
+    paddr_t end;
+
+    if (size == 0 || protected_end <= protected_start)
+        return false;
+
+    end = start + size;
+    if (end <= start)
+        return true;
+
+    return start < protected_end && protected_start < end;
+}
+
+static int tzasc_cma_reject_overlap(struct tzasc_cma_chunk *chunk,
+                                    paddr_t protected_start,
+                                    paddr_t protected_end,
+                                    const char *name)
+{
+    if (!tzasc_cma_range_overlaps(
+            chunk->paddr, chunk->size, protected_start, protected_end))
+        return 0;
+
+    kwarn("reject TZASC CMA chunk overlap %s: chunk_id=%lu paddr=0x%lx size=0x%lx protected=[0x%lx,0x%lx)\n",
+          name,
+          chunk->chunk_id,
+          chunk->paddr,
+          chunk->size,
+          protected_start,
+          protected_end);
+    return -EINVAL;
+}
+
+static int tzasc_cma_check_chunk_range(struct tzasc_cma_chunk *chunk)
+{
+    size_t i;
+    int ret;
+    paddr_t end;
+
+    if (chunk->size == 0)
+        return -EINVAL;
+
+    end = chunk->paddr + chunk->size;
+    if (end <= chunk->paddr) {
+        kwarn("reject TZASC CMA chunk overflow: chunk_id=%lu paddr=0x%lx size=0x%lx\n",
+              chunk->chunk_id,
+              chunk->paddr,
+              chunk->size);
+        return -EINVAL;
+    }
+
+    ret = tzasc_cma_reject_overlap(
+        chunk, get_tzdram_start(), get_tzdram_end(), "tzdram");
+    if (ret != 0)
+        return ret;
+
+#ifdef RKNPU_IOMMU_LOW_PT_BASE
+    ret = tzasc_cma_reject_overlap(chunk,
+                                   RKNPU_IOMMU_LOW_PT_BASE,
+                                   RKNPU_IOMMU_LOW_PT_END,
+                                   "rknpu-iommu-low-pt");
+    if (ret != 0)
+        return ret;
+#endif
+
+    for (i = 0; i < physmem_map_num; i++) {
+        ret = tzasc_cma_reject_overlap(chunk,
+                                       physmem_map[i][0],
+                                       physmem_map[i][1],
+                                       "physmem_map");
+        if (ret != 0)
+            return ret;
+    }
+
+    return 0;
+}
+
+static int tzasc_cma_release_region_locked(struct tzasc_cma_chunk *chunk)
+{
+    int ret = 0;
+
+    if (chunk->rgn_id >= 0) {
+        tzasc_cma_zero_chunk(chunk);
+        ret = secure_ddr_region_free(chunk->rgn_id);
+        if (ret == 0)
+            chunk->rgn_id = -1;
+    }
+
+    return ret;
+}
+
+int tzasc_cma_release_region(unsigned long chunk_id, struct cap_group *owner)
+{
+    struct tzasc_cma_chunk *chunk;
+    int ret = 0;
+
+    lock(&tzasc_cma_lock);
+
+    chunk = tzasc_cma_find_chunk(chunk_id);
+    if (chunk == NULL) {
+        ret = -ENOENT;
+        goto out;
+    }
+
+    if (chunk->owner != owner) {
+        ret = -EINVAL;
+        goto out;
+    }
+
+    ret = tzasc_cma_release_region_locked(chunk);
+
+out:
+    unlock(&tzasc_cma_lock);
+    return ret;
+}
+
+int tzasc_cma_get_owned_chunk_id(struct cap_group *owner,
+                                 unsigned long *chunk_id)
+{
+    size_t i;
+    int ret = -ENOENT;
+
+    if (owner == NULL || chunk_id == NULL)
+        return -EINVAL;
+
+    lock(&tzasc_cma_lock);
+
+    for (i = 0; i < TZASC_CMA_MAX_CHUNKS; i++) {
+        if (!tzasc_cma_chunks[i].used)
+            continue;
+        if (tzasc_cma_chunks[i].owner != owner)
+            continue;
+
+        *chunk_id = tzasc_cma_chunks[i].chunk_id;
+        ret = 0;
+        break;
+    }
+
+    unlock(&tzasc_cma_lock);
+    return ret;
+}
+#else
+struct tzasc_cma_chunk *tzasc_cma_find_chunk(unsigned long chunk_id)
+{
+    (void)chunk_id;
+    return NULL;
+}
+
+int tzasc_cma_record_alloc(unsigned long chunk_id, unsigned long paddr,
+                           unsigned long size, struct cap_group *owner)
+{
+    (void)chunk_id;
+    (void)paddr;
+    (void)size;
+    (void)owner;
+    return -ENOSYS;
+}
+
+int tzasc_cma_record_free(unsigned long chunk_id, struct cap_group *owner)
+{
+    (void)chunk_id;
+    (void)owner;
+    return -ENOSYS;
+}
+
+int tzasc_cma_check_owner(unsigned long chunk_id, struct cap_group *owner)
+{
+    (void)chunk_id;
+    (void)owner;
+    return -ENOSYS;
+}
+
+int tzasc_cma_release_region(unsigned long chunk_id, struct cap_group *owner)
+{
+    (void)chunk_id;
+    (void)owner;
+    return -ENOSYS;
+}
+
+int tzasc_cma_get_owned_chunk_id(struct cap_group *owner,
+                                 unsigned long *chunk_id)
+{
+    (void)owner;
+    (void)chunk_id;
+    return -ENOENT;
+}
+#endif
+#endif /* CHCORE_OH_TEE */
+
 cap_t sys_create_pmo(unsigned long size, pmo_type_t type)
 {
     if ((size == 0) || (type == PMO_DEVICE))
         return -EINVAL;
 #ifdef CHCORE_OH_TEE
-    if (type == PMO_TZ_NS)
+    if (type == PMO_TZ_NS || type == PMO_TZASC_CMA)
         return -EINVAL;
 #endif /* CHCORE_OH_TEE */
     return create_pmo(size, type, current_cap_group, 0, NULL);
@@ -301,8 +610,14 @@ int sys_map_pmo(cap_t target_cap_group_cap, cap_t pmo_cap, unsigned long addr,
     }
 
 #ifdef CHCORE_OH_TEE
-    if (pmo->type == PMO_TZ_NS) {
-        if (((struct ns_pmo_private *)pmo->private)->mapped) {
+    if (pmo->type == PMO_TZ_NS || pmo->type == PMO_TZASC_CMA) {
+        bool mapped;
+        if (pmo->type == PMO_TZ_NS)
+            mapped = ((struct ns_pmo_private *)pmo->private)->mapped;
+        else
+            mapped =
+                ((struct tzasc_cma_pmo_private *)pmo->private)->mapped;
+        if (mapped) {
             r = -EINVAL;
             goto out_obj_put_pmo;
         }
@@ -431,6 +746,17 @@ int sys_unmap_pmo(cap_t target_cap_group_cap, cap_t pmo_cap, unsigned long addr)
     }
 
     ret = vmspace_unmap_range(vmspace, addr, pmo->size);
+#ifdef CHCORE_OH_TEE
+    if (ret == 0 && pmo->type == PMO_TZASC_CMA) {
+        struct tzasc_cma_pmo_private *private = pmo->private;
+
+        if (private != NULL && private->mapped && private->vaddr == addr) {
+            private->mapped = false;
+            private->vaddr = 0;
+            private->len = 0;
+        }
+    }
+#endif /* CHCORE_OH_TEE */
 
     obj_put(vmspace);
 
@@ -450,12 +776,20 @@ static int pmo_init(struct pmobject *pmo, pmo_type_t type, size_t len,
                     paddr_t paddr, struct cap_group *cap_group)
 {
     int ret = 0;
-
 #ifdef CHCORE_OH_TEE
-    lock(&cap_group->heap_size_lock);
-    if (cap_group->heap_size_used + len > cap_group->heap_size_limit) {
-        ret = -ENOMEM;
-        goto out;
+    bool charge_heap = true;
+
+#ifdef CHCORE_ENABLE_TZASC_CMA
+    if (type == PMO_TZASC_CMA)
+        charge_heap = false;
+#endif
+
+    if (charge_heap) {
+        lock(&cap_group->heap_size_lock);
+        if (cap_group->heap_size_used + len > cap_group->heap_size_limit) {
+            ret = -ENOMEM;
+            goto out;
+        }
     }
 #endif /* CHCORE_OH_TEE */
 
@@ -548,6 +882,19 @@ static int pmo_init(struct pmobject *pmo, pmo_type_t type, size_t len,
         }
         break;
     }
+#ifdef CHCORE_ENABLE_TZASC_CMA
+    case PMO_TZASC_CMA: {
+        pmo->start = paddr;
+        pmo->private = kzalloc(sizeof(struct tzasc_cma_pmo_private));
+        if (pmo->private == NULL) {
+            ret = -ENOMEM;
+        } else {
+            ((struct tzasc_cma_pmo_private *)pmo->private)->creater =
+                current_cap_group;
+        }
+        break;
+    }
+#endif
 #endif /* CHCORE_OH_TEE */
     case PMO_FORBID: {
         /* This type marks the corresponding area cannot be accessed */
@@ -561,12 +908,14 @@ static int pmo_init(struct pmobject *pmo, pmo_type_t type, size_t len,
 #ifdef CHCORE_OH_TEE
 out:
     if (ret == 0) {
-        cap_group->heap_size_used += len;
+        if (charge_heap)
+            cap_group->heap_size_used += len;
         lock_init(&pmo->owner_lock);
         pmo->owner = obj_get(cap_group, CAP_GROUP_OBJ_ID, TYPE_CAP_GROUP);
         BUG_ON(pmo->owner == NULL);
     }
-    unlock(&cap_group->heap_size_lock);
+    if (charge_heap)
+        unlock(&cap_group->heap_size_lock);
 #endif /* CHCORE_OH_TEE */
     return ret;
 }
@@ -598,6 +947,28 @@ static void __free_pmo_page(void *addr)
     kfree((void *)phys_to_virt(addr));
 }
 
+#if defined(CHCORE_OH_TEE) && defined(CHCORE_ENABLE_TZASC_CMA)
+static int __release_tzasc_cma_pmo_region(struct pmobject *pmobject,
+                                          struct cap_group *owner)
+{
+    struct tzasc_cma_pmo_private *private;
+    int ret;
+
+    if (pmobject->type != PMO_TZASC_CMA || owner == NULL)
+        return 0;
+
+    private = pmobject->private;
+    if (private == NULL || private->chunk_id == 0)
+        return 0;
+
+    ret = tzasc_cma_release_region(private->chunk_id, owner);
+    if (ret == -ENOENT)
+        return 0;
+
+    return ret;
+}
+#endif
+
 void pmo_deinit(void *pmo_ptr)
 {
     struct pmobject *pmo;
@@ -607,9 +978,22 @@ void pmo_deinit(void *pmo_ptr)
     type = pmo->type;
 
 #ifdef CHCORE_OH_TEE
-    lock(&pmo->owner->heap_size_lock);
-    pmo->owner->heap_size_used -= pmo->size;
-    unlock(&pmo->owner->heap_size_lock);
+#ifdef CHCORE_ENABLE_TZASC_CMA
+    if (type == PMO_TZASC_CMA) {
+        int ret = __release_tzasc_cma_pmo_region(pmo, pmo->owner);
+
+        if (ret < 0)
+            kwarn("failed to release TZASC CMA PMO region, ret=%d\n", ret);
+    }
+
+    if (type != PMO_TZASC_CMA) {
+#endif
+        lock(&pmo->owner->heap_size_lock);
+        pmo->owner->heap_size_used -= pmo->size;
+        unlock(&pmo->owner->heap_size_lock);
+#ifdef CHCORE_ENABLE_TZASC_CMA
+    }
+#endif
     obj_put(pmo->owner);
 #endif /* CHCORE_OH_TEE */
 
@@ -650,6 +1034,12 @@ void pmo_deinit(void *pmo_ptr)
         kfree(pmo->private);
         break;
     }
+#ifdef CHCORE_ENABLE_TZASC_CMA
+    case PMO_TZASC_CMA: {
+        kfree(pmo->private);
+        break;
+    }
+#endif
 #endif /* CHCORE_OH_TEE */
     case PMO_FORBID: {
         break;
@@ -915,6 +1305,126 @@ out:
     return ret;
 }
 
+#ifdef CHCORE_ENABLE_TZASC_CMA
+static int __destroy_tzasc_cma_pmo(struct vmspace *vmspace,
+                                   struct pmobject *pmobject)
+{
+    struct tzasc_cma_pmo_private *private;
+    int ret;
+
+    if (pmobject->type != PMO_TZASC_CMA)
+        return -EINVAL;
+
+    private = pmobject->private;
+    if (private->creater != current_cap_group)
+        return -EINVAL;
+
+    if (private->mapped) {
+        ret = vmspace_unmap_range(vmspace, private->vaddr, private->len);
+        if (ret < 0)
+            return ret;
+
+        private->mapped = false;
+        private->vaddr = 0;
+        private->len = 0;
+    }
+
+    return __release_tzasc_cma_pmo_region(pmobject, current_cap_group);
+}
+
+cap_t sys_create_tzasc_cma_pmo(unsigned long chunk_id)
+{
+    struct tzasc_cma_chunk *chunk;
+    struct pmobject *pmobject;
+    int rgn_id;
+    cap_t ret;
+
+    lock(&tzasc_cma_lock);
+
+    chunk = tzasc_cma_find_chunk(chunk_id);
+    if (chunk == NULL) {
+        ret = -ENOENT;
+        goto out;
+    }
+
+    if (chunk->owner != current_cap_group) {
+        ret = -EINVAL;
+        goto out;
+    }
+
+    if (chunk->rgn_id >= 0) {
+        ret = -EBUSY;
+        goto out;
+    }
+
+    ret = tzasc_cma_check_chunk_range(chunk);
+    if (ret != 0)
+        goto out;
+
+    ret = secure_ddr_region_alloc(chunk->paddr, chunk->size, &rgn_id);
+    if (ret < 0)
+        goto out;
+    chunk->rgn_id = rgn_id;
+    tzasc_cma_zero_chunk(chunk);
+    printk("secure_ddr_region_alloc: chunk_id=%lu rgn=%d paddr=%lx size=%lu\n",
+           chunk_id, rgn_id, chunk->paddr, chunk->size);
+
+    ret = create_pmo(
+        chunk->size, PMO_TZASC_CMA, current_cap_group, chunk->paddr, &pmobject);
+    if (ret >= 0) {
+        ((struct tzasc_cma_pmo_private *)pmobject->private)->chunk_id =
+            chunk_id;
+    } else {
+        tzasc_cma_release_region_locked(chunk);
+    }
+
+out:
+    unlock(&tzasc_cma_lock);
+    return ret;
+}
+
+int sys_destroy_tzasc_cma_pmo(cap_t pmo)
+{
+    int ret;
+    struct vmspace *vmspace;
+    struct pmobject *pmobject;
+
+    pmobject = obj_get(current_cap_group, pmo, TYPE_PMO);
+    if (pmobject == NULL)
+        return 0;
+
+    vmspace = obj_get(current_cap_group, VMSPACE_OBJ_ID, TYPE_VMSPACE);
+    if (vmspace == NULL) {
+        ret = -ECAPBILITY;
+        goto out_put_pmo;
+    }
+
+    ret = __destroy_tzasc_cma_pmo(vmspace, pmobject);
+    if (ret < 0)
+        goto out_put_vmspace;
+
+    ret = cap_free(current_cap_group, pmo);
+
+out_put_vmspace:
+    obj_put(vmspace);
+out_put_pmo:
+    obj_put(pmobject);
+    return ret;
+}
+#else
+cap_t sys_create_tzasc_cma_pmo(unsigned long chunk_id)
+{
+    (void)chunk_id;
+    return -ENOSYS;
+}
+
+int sys_destroy_tzasc_cma_pmo(cap_t pmo)
+{
+    (void)pmo;
+    return -ENOSYS;
+}
+#endif
+
 cap_t sys_create_tee_shared_pmo(cap_t cap_group, struct tee_uuid *uuid,
                                 unsigned long size, cap_t *self_cap)
 {
@@ -991,6 +1501,11 @@ int sys_transfer_pmo_owner(cap_t pmo, cap_t cap_group)
     if (pmobject == NULL) {
         ret = -ECAPBILITY;
         goto out;
+    }
+
+    if (pmobject->type == PMO_TZASC_CMA) {
+        ret = -EINVAL;
+        goto out_put_pmo;
     }
 
     target_cap_group = obj_get(current_cap_group, cap_group, TYPE_CAP_GROUP);
