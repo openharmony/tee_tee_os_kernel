@@ -23,7 +23,7 @@
 /* declare that no wait when receiver msg */
 #define OS_NO_WAIT 0
 
-#define NOTIFY_MAX_LEN 152
+#define NOTIFY_MAX_LEN 168
 
 #define CH_CNT_MAX         2
 #define E_EX_TIMER_TIMEOUT 0xff
