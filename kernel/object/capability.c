@@ -261,12 +261,6 @@ cap_t cap_copy(struct cap_group *src_cap_group,
         }
     }
 
-    src_slot = get_slot(src_cap_group, src_slot_id);
-    if (!src_slot || src_slot->isvalid == false) {
-        r = -ECAPBILITY;
-        goto out_unlock;
-    }
-
     dest_slot_id = alloc_slot_id(dest_cap_group);
     if (dest_slot_id == -1) {
         r = -ENOMEM;

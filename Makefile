@@ -38,8 +38,8 @@ endif
 libc:
 	# copy musl-libc first
 	cp -rL $(MUSL_LIBC_DIR) $(LIBC_DIR)
-	rm $(LIBC_DIR)/bundle.json
-	cd $(LIBC_DIR) && git checkout 6227345be13b537704a72fc59ebf1735271b52d2 && cd -
+	cd $(LIBC_DIR) && git stash && git checkout 6227345be13b537704a72fc59ebf1735271b52d2 && cd -
+	rm $(LIBC_DIR)/bundle.json $(LIBC_DIR)/OAT.xml
 	$(Q)bash $(LIBCHCORE_SCRIPTS_DIR)/do_override_dir.sh $(LIBCHCORE_OVERRIDES_DIR) $(LIBC_DIR) \
 	&& bash $(LIBCHCORE_SCRIPTS_DIR)/do_patch_dir.sh $(LIBCHCORE_PATCHES_DIR) $(LIBC_DIR) \
 	&& cd $(LIBC_DIR) \

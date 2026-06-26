@@ -59,6 +59,7 @@ struct proc_node *procmgr_launch_basic_server(int input_argc, char **input_argv,
  * boot_secondary_servers() is in charge of booting the second kind of servers.
  */
 void set_tmpfs_cap(cap_t cap);
+void set_chanmgr_cap(cap_t cap);
 void boot_secondary_servers(void);
 
 /* Initialize sys_servers and sys_server_locks */
