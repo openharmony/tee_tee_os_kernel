@@ -132,6 +132,7 @@ struct smc_registers {
 };
 enum tz_switch_req {
     TZ_SWITCH_REQ_ENTRY_DONE,
+    TZ_SWITCH_REQ_ON_DONE,
     TZ_SWITCH_REQ_STD_REQUEST,
     TZ_SWITCH_REQ_STD_RESPONSE,
     TZ_SWITCH_REQ_NR

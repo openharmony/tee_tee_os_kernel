@@ -27,6 +27,7 @@
 #include <irq/irq.h>
 #include <object/thread.h>
 #ifdef CHCORE_OH_TEE
+#include <irq/ipi.h>
 #include <arch/trustzone/smc.h>
 #include <arch/trustzone/tlogger.h>
 #endif /* CHCORE_OH_TEE */
@@ -103,6 +104,8 @@ void main(paddr_t boot_flag, void *info)
     /* Other cores are busy looping on the boot_flag, wake up those cores */
     enable_smp_cores(boot_flag);
     kinfo("[ChCore] boot multicore finished\n");
+#else
+    init_ipi_data();
 #endif /* CHCORE_OH_TEE */
 
 #ifdef CHCORE_OH_TEE
@@ -138,6 +141,7 @@ void main(paddr_t boot_flag, void *info)
 
 void secondary_start(u32 cpuid)
 {
+    kinfo("[ChCore] secondary_start: cpu %d\n", cpuid);
     /* Init per_cpu info */
     init_per_cpu_info(cpuid);
 

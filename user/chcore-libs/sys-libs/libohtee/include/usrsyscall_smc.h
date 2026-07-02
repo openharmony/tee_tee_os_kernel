@@ -28,6 +28,7 @@ enum cap_teesmc_buf_ops {
 
 enum cap_teesmc_req {
     CAP_TEESMC_REQ_STARTTZ,
+    CAP_TEESMC_REQ_ONDONE,
     CAP_TEESMC_REQ_IDLE,
 };
 
