@@ -164,6 +164,7 @@
 #define CHCORE_SYS_get_affinity 102
 #define CHCORE_SYS_set_prio     103
 #define CHCORE_SYS_get_prio     104
+#define CHCORE_SYS_get_cpu_id   105
 
 /* IPC */
 /* - procedure call */

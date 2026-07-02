@@ -65,6 +65,7 @@ _Noreturn void usys_ipc_exit_routine_return(void);
 void usys_debug_log(long arg);
 int usys_set_affinity(cap_t thread_cap, s32 aff);
 s32 usys_get_affinity(cap_t thread_cap);
+int usys_get_cpu_id(void);
 
 unsigned long usys_get_free_mem_size(void);
 void usys_get_mem_usage_msg(void);
