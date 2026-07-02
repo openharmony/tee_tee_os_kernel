@@ -190,7 +190,13 @@ static void __pbrr_sched_dequeue(struct thread *thread)
 
 static int pbrr_sched_dequeue(struct thread *thread)
 {
-    return -1; // unused
+    if (thread->thread_ctx->state != TS_READY) {
+        kwarn("%s: thread state is %d\n", __func__, thread->thread_ctx->state);
+        return -EINVAL;
+    }
+
+    __pbrr_sched_dequeue(thread);
+    return 0;
 }
 
 static struct thread *pbrr_sched_choose_thread(void)
