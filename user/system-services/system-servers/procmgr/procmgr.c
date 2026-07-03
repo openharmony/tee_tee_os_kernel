@@ -208,7 +208,7 @@ static void handle_wait(ipc_msg_t *ipc_msg, badge_t client_badge,
         }
 
         /* Found. */
-        debug("Found process with pid=%d proc=%p\n", pr->pid, child);
+        debug("Found process with pid=%d proc=%p\n", pr->wait.pid, child);
 
         pthread_mutex_lock(&child->wait_lock);
         if (READ_ONCE(child->state) == PROC_STATE_EXIT) {

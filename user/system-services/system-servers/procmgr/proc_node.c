@@ -178,7 +178,7 @@ struct proc_node *new_proc_node(struct proc_node *parent, char *name,
     pthread_cond_init(&proc->wait_cv, NULL);
 
     pthread_mutex_unlock(&proc_nodes_lock);
-    debug("alloc pcid = %d\n", proc->pcid);
+    debug("alloc pcid = %lu\n", proc->pcid);
     return proc;
 }
 
