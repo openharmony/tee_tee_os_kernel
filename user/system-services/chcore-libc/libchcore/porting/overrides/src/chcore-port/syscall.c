@@ -478,6 +478,17 @@ int usys_tee_pull_kernel_var(unsigned long cmd_buf_addr_buf)
     return chcore_syscall1(CHCORE_SYS_tee_pull_kernel_var, cmd_buf_addr_buf);
 }
 
+int usys_teecall_cap_time_sync(uint32_t seconds, uint32_t mills)
+{
+    return chcore_syscall2(CHCORE_SYS_teecall_cap_time_sync, seconds, mills);
+}
+
+int usys_timer_get_offset(int32_t *seconds, int32_t *mills)
+{
+    return chcore_syscall2(CHCORE_SYS_timer_get_offset, (long)seconds,
+                           (long)mills);
+}
+
 void usys_disable_local_irq(void)
 {
     chcore_syscall0(CHCORE_SYS_disable_local_irq);

@@ -29,6 +29,7 @@
 #include <irq/timer.h>
 #include <irq/irq.h>
 #ifdef CHCORE_OH_TEE
+#include <arch/trustzone/counter.h>
 #include <arch/trustzone/smc.h>
 #include <arch/trustzone/tlogger.h>
 #endif /* CHCORE_OH_TEE */
@@ -317,6 +318,8 @@ const void *syscall_table[NR_SYSCALL] = {
     [SYS_tee_switch_req] = sys_tee_switch_req,
     [SYS_tee_create_ns_pmo] = sys_tee_create_ns_pmo,
     [SYS_tee_pull_kernel_var] = sys_tee_pull_kernel_var,
+    [SYS_timer_get_offset] = sys_timer_get_offset,
+    [SYS_teecall_cap_time_sync] = sys_teecall_cap_time_sync,
 #endif /* CHCORE_OH_TEE */
 #if defined(CHCORE_LLM)
     [SYS_tee_npu_secure_switch] = sys_tee_npu_secure_switch,

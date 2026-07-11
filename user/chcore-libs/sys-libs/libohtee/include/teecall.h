@@ -27,4 +27,6 @@ int debug_rdr_logitem(char *str, size_t str_len);
 
 int32_t teecall_cap_time_sync(uint32_t seconds, uint32_t mills);
 
+int timer_get_offset(int32_t *seconds, int32_t *mills);
+
 #endif
