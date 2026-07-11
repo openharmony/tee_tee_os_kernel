@@ -82,6 +82,11 @@ void handle_task_unmap_ns(ipc_msg_t *ipc_msg, badge_t badge)
     pid = taskid_to_pid(req->task_unmap_ns.task_id);
 
     proc_node = get_proc_node_by_pid(pid);
+    if (proc_node == NULL) {
+        ipc_return(ipc_msg, 0);
+        return;
+    }
+
     ret = usys_destroy_ns_pmo(proc_node->proc_cap, req->task_unmap_ns.pmo);
 
     ipc_return(ipc_msg, ret);
