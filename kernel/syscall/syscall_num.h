@@ -38,6 +38,8 @@
 #define SYS_tzasc_cma_free        22
 #define SYS_create_tzasc_cma_pmo  23
 #define SYS_destroy_tzasc_cma_pmo 24
+#define SYS_timer_get_offset 25
+#define SYS_teecall_cap_time_sync 26
 #endif /* CHCORE_OH_TEE */
 
 /* - address translation */

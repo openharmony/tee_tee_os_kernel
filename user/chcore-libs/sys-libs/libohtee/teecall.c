@@ -33,6 +33,10 @@ int debug_rdr_logitem(char *str, size_t str_len)
 
 int32_t teecall_cap_time_sync(uint32_t seconds, uint32_t mills)
 {
-    printf("%s not implemented!\n", __func__);
-    return 0;
+    return usys_teecall_cap_time_sync(seconds, mills);
+}
+
+int timer_get_offset(int32_t *seconds, int32_t *mills)
+{
+    return usys_timer_get_offset(seconds, mills);
 }
