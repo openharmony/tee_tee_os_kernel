@@ -260,12 +260,14 @@ out_unlock:
 
 int chcore_futex_requeue(int *uaddr, int *uaddr2, int nr_wake, int nr_requeue)
 {
-    BUG_ON(nr_wake != 0);
-    BUG_ON(nr_requeue != 1);
     int empty_idx = -1, send_count = 0, idx = -1, idx2 = -1;
     int i, ret;
     struct requeued_futex *requeue_iter, *requeue;
     struct notifc_cache_entry *cur_notifc_cache;
+
+    if (nr_wake != 0 || nr_requeue != 1) {
+        return -EINVAL;
+    }
 
     if (uaddr == uaddr2)
         return -EINVAL;

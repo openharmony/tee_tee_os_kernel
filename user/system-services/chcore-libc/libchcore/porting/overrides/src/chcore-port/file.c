@@ -935,8 +935,18 @@ static ssize_t chcore_file_read(int fd, void *buf, size_t count)
         fr_ptr->read.fd = fd;
         fr_ptr->read.count = cnt;
         ret = ipc_call(_fs_ipc_struct, ipc_msg);
-        if (ret > 0)
+        if (ret < 0) {
+            ipc_destroy_msg(ipc_msg);
+            return ret;
+        }
+        if ((size_t)ret > (size_t)cnt ||
+            (size_t)ret > ipc_msg->data_len) {
+            ipc_destroy_msg(ipc_msg);
+            return -EFBIG;
+        }
+        if (ret > 0) {
             memcpy(buf, ipc_get_msg_data(ipc_msg), ret);
+        }
         buf = (char *)buf + ret;
         remain -= ret;
         if (ret != cnt)

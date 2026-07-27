@@ -57,7 +57,17 @@ void pipe_server_handler(ipc_msg_t *ipc_msg, badge_t client_badge)
     struct pipe_request *pipe_rq;
     int ret;
 
+    if (ipc_msg->data_len < sizeof(struct pipe_request)) {
+        ipc_return(ipc_msg, -EINVAL);
+    }
+
     pipe_rq = (struct pipe_request *)ipc_get_msg_data(ipc_msg);
+    if (pipe_rq->count < 0 ||
+        (size_t)pipe_rq->count >
+            ipc_msg->data_len - sizeof(struct pipe_request)) {
+        ipc_return(ipc_msg, -EINVAL);
+    }
+
     switch (pipe_rq->pipe_rq_type) {
     case PIPE_RQ_READ:
         ret =

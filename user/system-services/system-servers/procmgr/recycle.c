@@ -34,6 +34,8 @@ struct recycle_msg {
 
 struct ring_buffer *recycle_msg_buffer = NULL;
 #define MAX_MSG_NUM 100
+#define RECYCLE_RING_BUFFER_SIZE \
+    (sizeof(struct ring_buffer) + MAX_MSG_NUM * sizeof(struct recycle_msg))
 
 int usys_cap_group_recycle(int);
 
@@ -62,7 +64,10 @@ void *recycle_routine(void *arg)
 
     while (1) {
         usys_wait(notific_cap, 1 /* Block */, NULL /* No timeout */);
-        while (get_one_msg(recycle_msg_buffer, &msg)) {
+        while (get_one_msg(recycle_msg_buffer,
+                           &msg,
+                           sizeof(msg),
+                           RECYCLE_RING_BUFFER_SIZE)) {
             proc_to_recycle = get_proc_node(msg.badge);
             assert(proc_to_recycle != 0);
 

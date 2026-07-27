@@ -54,7 +54,13 @@ int append_rdr_log(const void *buf, size_t len)
         goto out_unlock;
     }
 
-    if (logger->flag.last_pos + len >= logger->flag.max_len) {
+    if (len > logger->flag.max_len) {
+        ret = -E2BIG;
+        goto out_unlock;
+    }
+
+    if (logger->flag.last_pos >= logger->flag.max_len ||
+        len >= logger->flag.max_len - logger->flag.last_pos) {
         logger->flag.last_pos = 0;
         logger->flag.write_loops++;
     }
@@ -167,6 +173,11 @@ int sys_debug_rdr_logitem(char *str, size_t str_len)
 {
     int ret = 0;
     char *kbuf;
+
+    if (str_len > TMP_LOGGER_SIZE - sizeof(struct log_buffer)) {
+        return -E2BIG;
+    }
+
     if (check_user_addr_range((vaddr_t)str, str_len)) {
         return -EINVAL;
     }
