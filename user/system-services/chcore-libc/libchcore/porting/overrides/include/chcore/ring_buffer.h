@@ -33,7 +33,8 @@ struct ring_buffer {
     size_t msg_size;
 };
 
-int get_one_msg(struct ring_buffer *ring_buf, void *msg);
+int get_one_msg(struct ring_buffer *ring_buf, void *msg, size_t msg_capacity,
+                size_t ring_capacity);
 int set_one_msg(struct ring_buffer *ring_buf, void *msg);
 int if_buffer_full(struct ring_buffer *ring_buf);
 struct ring_buffer *new_ringbuffer(int msg_num, size_t msg_size);

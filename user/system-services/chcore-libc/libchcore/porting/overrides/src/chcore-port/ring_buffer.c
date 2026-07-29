@@ -27,17 +27,64 @@ static inline off_t next_slot(struct ring_buffer *ring_buf, off_t off)
                 (off + ring_buf->msg_size));
 }
 
-int get_one_msg(struct ring_buffer *ring_buf, void *msg)
+static bool ring_buffer_offset_valid(size_t buffer_size, size_t msg_size,
+                                     off_t offset)
 {
-    off_t p_off = ring_buf->producer_offset;
-    off_t c_off = ring_buf->consumer_offset;
+    size_t header_size = sizeof(struct ring_buffer);
+    size_t offset_value;
+
+    if (msg_size == 0 || buffer_size < header_size ||
+        msg_size > buffer_size - header_size ||
+        (buffer_size - header_size) % msg_size != 0 || offset < 0) {
+        return false;
+    }
+
+    offset_value = (size_t)offset;
+    if (offset_value < header_size ||
+        offset_value > buffer_size - msg_size ||
+        (offset_value - header_size) % msg_size != 0) {
+        return false;
+    }
+
+    return true;
+}
+
+int get_one_msg(struct ring_buffer *ring_buf, void *msg, size_t msg_capacity,
+                size_t ring_capacity)
+{
+    size_t buffer_size;
+    size_t msg_size;
+    off_t p_off;
+    off_t c_off;
+    size_t next_offset;
+    vaddr_t buf;
+
+    if (ring_buf == NULL || msg == NULL) {
+        return MSG_OP_FAILURE;
+    }
+
+    buffer_size = ring_buf->buffer_size;
+    msg_size = ring_buf->msg_size;
+    p_off = ring_buf->producer_offset;
+    c_off = ring_buf->consumer_offset;
+
+    if (buffer_size != ring_capacity || msg_size != msg_capacity ||
+        !ring_buffer_offset_valid(buffer_size, msg_size, p_off) ||
+        !ring_buffer_offset_valid(buffer_size, msg_size, c_off)) {
+        return MSG_OP_FAILURE;
+    }
 
     /* recycle_msg_buffer is empty */
-    if (p_off == c_off)
+    if (p_off == c_off) {
         return MSG_OP_FAILURE;
-    vaddr_t buf = (vaddr_t)ring_buf + c_off;
-    memcpy(msg, (void *)buf, ring_buf->msg_size);
-    ring_buf->consumer_offset = next_slot(ring_buf, c_off);
+    }
+
+    buf = (vaddr_t)ring_buf + (size_t)c_off;
+    memcpy(msg, (void *)buf, msg_size);
+    next_offset = ((size_t)c_off == buffer_size - msg_size) ?
+                      sizeof(struct ring_buffer) :
+                      (size_t)c_off + msg_size;
+    ring_buf->consumer_offset = (off_t)next_offset;
     return MSG_OP_SUCCESS;
 }
 

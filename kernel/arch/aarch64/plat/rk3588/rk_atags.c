@@ -30,6 +30,24 @@ static u32 get_hash(void *buf, u32 len)
     return hash;
 }
 
+static bool tag_range_valid(const struct tag *tag, u32 size, u32 tail_size)
+{
+    unsigned long tag_addr = (unsigned long)tag;
+    u64 tag_bytes = (u64)size * sizeof(u32);
+    u64 available;
+
+    if (tag_addr < ATAGS_VIRT_BASE || tag_addr > ATAGS_VIRT_END) {
+        return false;
+    }
+
+    available = (u64)(ATAGS_VIRT_END - tag_addr);
+    if (tag_bytes > available || (u64)tail_size > available - tag_bytes) {
+        return false;
+    }
+
+    return true;
+}
+
 int set_tos_mem_tag(void *tagdata)
 {
     u32 length, size = 0, hash;
@@ -41,18 +59,20 @@ int set_tos_mem_tag(void *tagdata)
     if (!tagdata)
         return -ENODATA;
 
-    for_each_tag(t, (struct tag *)ATAGS_VIRT_BASE)
-    {
-        if (((unsigned long)t > ATAGS_VIRT_END) || 
-           ((unsigned long)t + t->hdr.size * 4 > ATAGS_VIRT_END))
+    for_each_tag(t, (struct tag *)ATAGS_VIRT_BASE) {
+        if (t->hdr.size < sizeof(struct tag_header) / sizeof(u32) ||
+            !tag_range_valid(t, t->hdr.size, sizeof(struct tag_header))) {
             return -EINVAL;
+        }
 
         if (((t->hdr.magic != MAGIC_CORE) && (t->hdr.magic != MAGIC_NONE)
-           && (t->hdr.magic <= MAGIC_MIN || t->hdr.magic > MAGIC_MAX)))
+             && (t->hdr.magic <= MAGIC_MIN || t->hdr.magic > MAGIC_MAX))) {
             return -EINVAL;
+        }
 
-        if (t->hdr.magic == MAGIC_TOS_MEM || t->hdr.magic == MAGIC_NONE)
+        if (t->hdr.magic == MAGIC_TOS_MEM || t->hdr.magic == MAGIC_NONE) {
             break;
+        }
     }
 
     size = tag_size(tag_tos_mem);
@@ -60,15 +80,19 @@ int set_tos_mem_tag(void *tagdata)
     if (!size)
         return -EINVAL;
 
-    if (((unsigned long)t > ATAGS_VIRT_END) || 
-           ((unsigned long)t + t->hdr.size * 4 > ATAGS_VIRT_END))
+    u64 tag_bytes = (u64)size * sizeof(u32);
+    if (tag_bytes < sizeof(struct tag_header) + HASH_LEN) {
+        return -EINVAL;
+    }
+    if (!tag_range_valid(t, size, sizeof(struct tag_header))) {
         return -ENOMEM;
+    }
 
     t->hdr.magic = MAGIC_TOS_MEM;
     t->hdr.size = size;
-    length = (t->hdr.size << 2) - sizeof(struct tag_header) - HASH_LEN;
+    length = (u32)(tag_bytes - sizeof(struct tag_header) - HASH_LEN);
     memcpy(&t->u, (char *)tagdata, length);
-    hash = get_hash(t, (size << 2) - HASH_LEN);
+    hash = get_hash(t, (u32)(tag_bytes - HASH_LEN));
     memcpy((char *)&t->u + length, &hash, HASH_LEN);
 
     t = tag_next(t);

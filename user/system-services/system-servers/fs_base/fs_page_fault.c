@@ -32,6 +32,8 @@
 
 struct ring_buffer *fault_msg_buffer;
 #define MAX_MSG_NUM 100
+#define FAULT_RING_BUFFER_SIZE \
+    (sizeof(struct ring_buffer) + MAX_MSG_NUM * sizeof(struct user_fault_msg))
 cap_t notific_cap;
 struct list_head fmap_area_mappings;
 pthread_rwlock_t fmap_area_lock;
@@ -164,7 +166,10 @@ void *user_fault_handler(void *args)
 
     while (1) {
         usys_wait(notific_cap, 1 /* Block */, NULL);
-        while (get_one_msg(fault_msg_buffer, &msg)) {
+        while (get_one_msg(fault_msg_buffer,
+                           &msg,
+                           sizeof(msg),
+                           FAULT_RING_BUFFER_SIZE)) {
             fs_debug_trace_fswrapper(
                 "fault_msg_slot: 0x%lx | 0x%lx | 0x%lx\n",
                 (vaddr_t)fault_msg_buffer,

@@ -100,6 +100,10 @@ void handle_tee_alloc_sharemem(ipc_msg_t *ipc_msg, badge_t badge)
     struct proc_request *req;
     struct shm_entry *entry;
 
+    if (ipc_msg->data_len < sizeof(struct proc_request)) {
+        ipc_return(ipc_msg, -EINVAL);
+    }
+
     req = (struct proc_request *)ipc_get_msg_data(ipc_msg);
     proc_node = get_proc_node(badge);
 

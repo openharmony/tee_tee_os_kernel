@@ -138,7 +138,9 @@ int fs_wrapper_set_server_entry(badge_t client_badge, int fd, int fid)
     struct server_entry_node *private_iter;
 
     /* Validate fd */
-    BUG_ON(fd < 0 || fd >= MAX_SERVER_ENTRY_PER_CLIENT);
+    if (fd < 0 || fd >= MAX_SERVER_ENTRY_PER_CLIENT) {
+        return -EINVAL;
+    }
 
     /* Check if client_badge already involved */
     pthread_spin_lock(&server_entry_mapping_lock);

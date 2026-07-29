@@ -20,6 +20,10 @@ void chanmgr_dispatch(ipc_msg_t *ipc_msg, badge_t client_badge, int pid,
 {
     struct chan_request *req;
 
+    if (ipc_msg->data_len < sizeof(struct chan_request)) {
+        ipc_return(ipc_msg, -EINVAL);
+    }
+
     req = (struct chan_request *)ipc_get_msg_data(ipc_msg);
 
     switch (req->req) {
