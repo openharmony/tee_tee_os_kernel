@@ -496,6 +496,7 @@ void sys_thread_exit(void)
 int sys_set_affinity(cap_t thread_cap, int aff)
 {
     struct thread *thread;
+    int ret;
 
     if (aff >= PLAT_CPU_NUM)
         return -EINVAL;
@@ -509,7 +510,23 @@ int sys_set_affinity(cap_t thread_cap, int aff)
     if (thread == NULL)
         return -ECAPBILITY;
 
-    thread->thread_ctx->affinity = aff;
+    if (thread->thread_ctx->state == TS_READY) {
+        ret = sched_dequeue(thread);
+        if (ret != 0) {
+            if (thread_cap != 0)
+                obj_put(thread);
+            return ret;
+        }
+        thread->thread_ctx->affinity = aff;
+        ret = sched_enqueue(thread);
+        if (ret != 0) {
+            if (thread_cap != 0)
+                obj_put(thread);
+            return ret;
+        }
+    } else {
+        thread->thread_ctx->affinity = aff;
+    }
 
     if (thread_cap != 0)
         obj_put(thread);

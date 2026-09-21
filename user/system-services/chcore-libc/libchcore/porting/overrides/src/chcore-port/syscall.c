@@ -99,6 +99,11 @@ s32 usys_get_affinity(cap_t thread_cap)
     return chcore_syscall1(CHCORE_SYS_get_affinity, thread_cap);
 }
 
+int usys_get_cpu_id(void)
+{
+    return chcore_syscall0(CHCORE_SYS_get_cpu_id);
+}
+
 int usys_get_prio(cap_t thread_cap)
 {
     return chcore_syscall1(CHCORE_SYS_get_prio, thread_cap);

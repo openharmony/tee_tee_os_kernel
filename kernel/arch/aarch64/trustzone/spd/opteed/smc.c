@@ -344,6 +344,9 @@ int sys_tee_switch_req(struct smc_registers *regs_u)
     if (regs_k.x0 == TZ_SWITCH_REQ_ENTRY_DONE) {
         regs_k.x0 = SMC_ENTRY_DONE;
         regs_k.x1 = (vaddr_t)&tz_vectors;
+    } else if (regs_k.x0 == TZ_SWITCH_REQ_ON_DONE) {
+        regs_k.x0 = SMC_ON_DONE;
+        regs_k.x1 = 0;
     } else if (regs_k.x0 == TZ_SWITCH_REQ_STD_RESPONSE) {
         regs_k.x0 = SMC_STD_RESPONSE;
         regs_k.x1 = SMC_EXIT_NORMAL;

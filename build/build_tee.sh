@@ -41,6 +41,12 @@ if [[ -z "${CHCORE_PLAT}" ]]; then
     echo "failed to get CHCORE_PLAT from ${CONFIG_MK}"
     exit 1
 fi
+PLAT_MACHINE_H=${CHCORE_DIR}/kernel/include/arch/aarch64/plat/${CHCORE_PLAT}/machine.h
+TEE_CORE_NUM=$(awk '/^[[:space:]]*#define[[:space:]]+PLAT_CPU_NUM[[:space:]]+/ {print $3; exit}' ${PLAT_MACHINE_H})
+if ! [[ "${TEE_CORE_NUM}" =~ ^[0-9]+$ ]]; then
+    echo "failed to get PLAT_CPU_NUM from ${PLAT_MACHINE_H}"
+    exit 1
+fi
 CHCORE_LLM=$(sed -n 's/^[[:space:]]*CHCORE_LLM[[:space:]]*=[[:space:]]*\([^[:space:]\\]*\).*/\1/p' ${CONFIG_MK} | head -n 1)
 if [[ "${CHCORE_LLM}" = "ON" && "${CHCORE_PLAT}" = "rk3588" ]]; then
     CHCORE_LLM=1
@@ -76,7 +82,7 @@ cp -r ${CHCORE_DIR}/user/chcore-libc/musl-libc/install/include/* ${OH_TEE_HEADER
 cp ${CHCORE_DIR}/user/chcore-libs/sys-libs/libohtee/include/* ${OH_TEE_HEADERS_DIR}/sys/
 # go to framework and build it
 cd ${OH_TEE_FRAMEWORK_DIR}/build
-./build_framework.sh oh_64 ${CHCORE_DIR}/oh_tee ${COMPILER_DIR} ${COMPILER_VER} ${OH_TEE_FRAMEWORK_DIR} ${THIRD_PARTY} ${CHCORE_PLAT}
+./build_framework.sh oh_64 ${CHCORE_DIR}/oh_tee ${COMPILER_DIR} ${COMPILER_VER} ${OH_TEE_FRAMEWORK_DIR} ${THIRD_PARTY} ${CHCORE_PLAT} ${TEE_CORE_NUM}
 # compile again to put the apps into ramdisk-dir
 cd ${CHCORE_DIR}
 if [ "${CHCORE_LLM}" = 1 ]; then

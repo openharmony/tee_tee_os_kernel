@@ -12,11 +12,44 @@
 #ifndef USRSYSCALL_IRQ_H
 #define USRSYSCALL_IRQ_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 int32_t enable_local_irq(void);
 
 int32_t disable_local_irq(void);
+
+/*
+ * set_irq_pending() raises a GIC interrupt from a user-space system service.
+ *
+ * This is used by TEE framework services that need to notify the REE through a
+ * non-secure SPI. The irq argument must be a GIC hardware interrupt number, not
+ * a Linux virtual IRQ.
+ */
+int32_t set_irq_pending(uint32_t irq);
+
+/*
+ * clear_irq_pending() clears a GIC interrupt pending state.
+ *
+ * This is used before enabling a notify SPI so stale pending state does not
+ * generate a spurious REE wakeup.
+ */
+int32_t clear_irq_pending(uint32_t irq);
+
+/*
+ * set_irq_nonsecure() moves a GIC interrupt into the non-secure group.
+ *
+ * The notify SPI must be non-secure because Linux owns the IRQ handler that
+ * drains the notify shared memory.
+ */
+int32_t set_irq_nonsecure(uint32_t irq);
+
+/*
+ * mask_irq() masks or unmasks a GIC interrupt.
+ *
+ * Passing true masks the interrupt and passing false unmasks it.
+ */
+int32_t mask_irq(uint32_t irq, bool mask);
 
 void init_sysctrl_hdlr(void);
 

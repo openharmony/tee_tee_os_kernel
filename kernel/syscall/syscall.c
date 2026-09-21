@@ -40,6 +40,9 @@
 #ifdef CHCORE_ARCH_X86_64
 #include <arch/pci.h>
 #endif /* CHCORE_ARCH_X86_64 */
+#ifdef CHCORE_ARCH_AARCH64
+#include <arch/machine/smp.h>
+#endif /* CHCORE_ARCH_AARCH64 */
 
 #include "syscall_num.h"
 
@@ -156,6 +159,15 @@ void sys_perf_null(void)
 }
 /* DELETE */
 
+int sys_get_cpu_id(void)
+{
+#ifdef CHCORE_ARCH_AARCH64
+    return smp_get_cpu_id();
+#else
+    return 0;
+#endif /* CHCORE_ARCH_AARCH64 */
+}
+
 void sys_get_pci_device(int class, u64 pci_dev_uaddr)
 {
 #if defined(CHCORE_ARCH_X86_64)
@@ -246,6 +258,7 @@ const void *syscall_table[NR_SYSCALL] = {
     [SYS_get_affinity] = sys_get_affinity,
     [SYS_set_prio] = sys_set_prio,
     [SYS_get_prio] = sys_get_prio,
+    [SYS_get_cpu_id] = sys_get_cpu_id,
     /* IPC */
     /* - procedure call */
     [SYS_register_server] = sys_register_server,

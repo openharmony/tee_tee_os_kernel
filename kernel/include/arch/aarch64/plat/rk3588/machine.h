@@ -13,7 +13,7 @@
 
 #include <common/types.h>
 
-#define PLAT_CPU_NUM 1
+#define PLAT_CPU_NUM 8
 
 void teeos_cfg_init(paddr_t start_pa);
 

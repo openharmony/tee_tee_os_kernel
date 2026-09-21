@@ -148,10 +148,12 @@ EXPORT(el1_vector)
  *  - t: SP_EL0 is used
  *  - h: SP_ELx is used
  *
- * ChCore does not enable or handle irq_el1t, fiq_xxx, and error_xxx.
+ * ChCore does not enable or handle irq_el1t, fiq_el1t, and error_xxx.
  * The SPSR_EL1 of idle threads is set to 0b0101, which means interrupt
  * are enabled during the their execution and SP_EL1 is selected (h).
  * Thus, irq_el1h is enabled and handled.
+ * OH-TEE also handles fiq_el1h because a secure preemption FIQ can arrive
+ * while an idle thread is running in EL1h.
  *
  * Similarly, sync_el1t is also not enabled while we simply reuse the handler for
  * sync_el0 to handle sync_el1h (e.g., page fault during copy_to_user and fpu).
@@ -169,11 +171,24 @@ irq_el1h:
 
 irq_el1t:
 fiq_el1t:
+#ifndef CHCORE_OH_TEE
 fiq_el1h:
+#endif /* CHCORE_OH_TEE */
 error_el1t:
 error_el1h:
 sync_el1t:
 	bl unexpected_handler
+
+#ifdef CHCORE_OH_TEE
+fiq_el1h:
+	exception_enter
+#ifndef CHCORE_KERNEL_RT
+	switch_to_cpu_stack
+#endif
+	bl	handle_fiq
+	/* should never reach here */
+	b .
+#endif /* CHCORE_OH_TEE */
 
 sync_el1h:
 	exception_enter

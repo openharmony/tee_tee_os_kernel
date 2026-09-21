@@ -29,10 +29,12 @@ int smc_wait_switch_req(struct cap_teesmc_buf *smc_buf)
 
 int smc_switch_req(enum cap_teesmc_req req)
 {
-    struct smc_registers regs;
+    struct smc_registers regs = {0};
 
     if (req == CAP_TEESMC_REQ_STARTTZ) {
         regs.x0 = TZ_SWITCH_REQ_ENTRY_DONE;
+    } else if (req == CAP_TEESMC_REQ_ONDONE) {
+        regs.x0 = TZ_SWITCH_REQ_ON_DONE;
     } else if (req == CAP_TEESMC_REQ_IDLE) {
         regs.x0 = TZ_SWITCH_REQ_STD_RESPONSE;
         regs.x1 = 0;

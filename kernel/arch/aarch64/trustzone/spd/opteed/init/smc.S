@@ -19,9 +19,10 @@ BEGIN_FUNC(fast_smc_entry)
 END_FUNC(fast_smc_entry)
 
 BEGIN_FUNC(cpu_on_entry)
-        ldr     x0, =SMC_ON_DONE
-        mov     x1, #0
-        smc     #0
+        b       cpu_on_handler  // Should not return
+err:
+        wfe
+        b       err
 END_FUNC(cpu_on_entry)
 
 BEGIN_FUNC(cpu_off_entry)
@@ -59,6 +60,8 @@ BEGIN_FUNC(system_reset_entry)
         mov     x1, #0
         smc     #0
 END_FUNC(system_reset_entry)
+
+.align 3
 
 BEGIN_FUNC(tz_vectors)
 	b	yield_smc_entry

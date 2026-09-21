@@ -74,6 +74,7 @@
 #define SYS_get_affinity 102
 #define SYS_set_prio     103
 #define SYS_get_prio     104
+#define SYS_get_cpu_id   105
 
 /* IPC */
 /* - procedure call */
